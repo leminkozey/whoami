@@ -231,7 +231,7 @@
         '  <span class="cmd-highlight">help</span>        — show this message',
         '',
         '  ...try some creative commands too, like <span class="cmd-highlight">' +
-        ['sudo rm -rf /', 'hack', 'matrix', 'ls', 'vim', 'exit', 'cat readme.md', 'sudo'][Math.floor(Math.random() * 8)] +
+        ['sudo rm -rf /', 'hack', 'matrix', 'ls', 'vim', 'exit', 'cat readme.md', 'sudo', 'winget moo'][Math.floor(Math.random() * 9)] +
         '</span> ...there is more ;)',
       ];
     },
@@ -468,6 +468,24 @@
 
     exit: function () {
       return ['You can check out any time you like, but you can never leave. 🎸'];
+    },
+
+    'winget moo': function () {
+      var cow = document.createElement('pre');
+      cow.className = 'banner-art';
+      cow.textContent =
+        '         (__)\n' +
+        '         (oo)\n' +
+        '   /------\\/\n' +
+        '  / |    ||\n' +
+        ' *  /\\---/\\\n' +
+        '    ~~   ~~';
+      terminalOutput.appendChild(cow);
+      return ['Have you mooed today?'];
+    },
+
+    moo: function () {
+      return commands['winget moo']();
     },
 
     vim: function () {
