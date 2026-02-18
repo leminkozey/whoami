@@ -726,6 +726,16 @@ nav a:hover::after {
   padding-left: 8px;
 }
 
+.banner-art {
+  color: var(--accent);
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 8px 0;
+  padding-left: 8px;
+  white-space: pre;
+}
+
 .cmd-highlight {
   color: var(--accent);
 }
