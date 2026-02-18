@@ -834,14 +834,34 @@ nav a:hover::after {
   white-space: nowrap;
 }
 
-#terminal-input {
+.terminal-input-wrapper {
   flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--text-bright);
+  display: grid;
+}
+
+.terminal-ghost,
+#terminal-input {
+  grid-row: 1;
+  grid-column: 1;
+  align-self: center;
   font-family: var(--font);
   font-size: 13px;
+  height: 20px;
+  line-height: 20px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+.terminal-ghost {
+  color: #444;
+  pointer-events: none;
+}
+
+#terminal-input {
+  color: var(--text-bright);
   caret-color: var(--accent);
 }
 
@@ -1057,6 +1077,10 @@ footer {
   }
 
   #terminal-input {
+    font-size: 12px;
+  }
+
+  .terminal-ghost {
     font-size: 12px;
   }
 }

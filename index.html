@@ -339,7 +339,10 @@
         </div>
         <div class="terminal-input-line">
           <span class="terminal-prompt">visitor@whoami:~$&nbsp;</span>
-          <input type="text" id="terminal-input" autocomplete="off" spellcheck="false" autofocus>
+          <div class="terminal-input-wrapper">
+            <input id="terminal-ghost" class="terminal-ghost" readonly tabindex="-1">
+            <input type="text" id="terminal-input" autocomplete="off" spellcheck="false" autofocus>
+          </div>
         </div>
       </div>
     </section>

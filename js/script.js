@@ -609,11 +609,55 @@
     noise.stop(t + duration);
   }
 
+  // Ghost autocomplete helper
+  var ghostEl = document.getElementById('terminal-ghost');
+  var currentSuggestion = '';
+
+  function updateGhost() {
+    var input = terminalInput.value.toLowerCase();
+    currentSuggestion = '';
+    if (ghostEl) ghostEl.value = '';
+    if (input.length < 2) return;
+    var allCmds = Object.keys(commands);
+    for (var i = 0; i < allCmds.length; i++) {
+      if (allCmds[i].indexOf(input) === 0 && allCmds[i] !== input) {
+        currentSuggestion = allCmds[i];
+        if (ghostEl) ghostEl.value = currentSuggestion;
+        return;
+      }
+    }
+  }
+
   // Process terminal input
   if (terminalInput) {
+    terminalInput.addEventListener('input', function () {
+      updateGhost();
+    });
+
     terminalInput.addEventListener('keydown', function (e) {
-      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') playKeySound();
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown' && e.key !== 'Tab') playKeySound();
+
+      // Tab / Enter autocomplete ghost suggestion
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        if (currentSuggestion) {
+          terminalInput.value = currentSuggestion;
+          currentSuggestion = '';
+          if (ghostEl) ghostEl.value = '';
+        }
+        return;
+      }
+
       if (e.key === 'Enter') {
+        // If ghost suggestion is visible, complete it instead of executing
+        if (currentSuggestion) {
+          e.preventDefault();
+          terminalInput.value = currentSuggestion;
+          currentSuggestion = '';
+          if (ghostEl) ghostEl.value = '';
+          return;
+        }
+
         const cmd = terminalInput.value.trim();
         if (!cmd) return;
 
@@ -644,6 +688,8 @@
 
         appendToTerminal('&nbsp;');
         terminalInput.value = '';
+        currentSuggestion = '';
+        if (ghostEl) ghostEl.value = '';
       }
 
       // Command history navigation
@@ -653,6 +699,8 @@
           historyIndex--;
           terminalInput.value = commandHistory[historyIndex];
         }
+        currentSuggestion = '';
+        if (ghostEl) ghostEl.value = '';
       }
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -663,6 +711,8 @@
           historyIndex = commandHistory.length;
           terminalInput.value = '';
         }
+        currentSuggestion = '';
+        if (ghostEl) ghostEl.value = '';
       }
     });
 
