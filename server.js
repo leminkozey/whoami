@@ -1,10 +1,14 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const url = require('url');
 
 const PORT = 8081;
 const COUNTER_FILE = path.join(__dirname, 'visitors.json');
+const PROJECT_ROOT = path.resolve(__dirname) + path.sep;
+
+// Allowed directories and files for static serving
+const ALLOWED_DIRS = ['/js/', '/css/', '/assets/'];
+const ALLOWED_FILES = ['/index.html', '/robots.txt', '/sitemap.xml'];
 
 const MIME = {
   '.html': 'text/html',
@@ -24,81 +28,92 @@ const MIME = {
   '.txt': 'text/plain',
 };
 
-function readCounter() {
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+};
+
+let visitorCount = (function () {
   try {
     return JSON.parse(fs.readFileSync(COUNTER_FILE, 'utf8')).count || 0;
   } catch {
     return 0;
   }
-}
+})();
 
 function writeCounter(count) {
-  fs.writeFileSync(COUNTER_FILE, JSON.stringify({ count }));
+  fs.writeFile(COUNTER_FILE, JSON.stringify({ count }), () => {});
 }
 
 function parseCookies(req) {
   var cookies = {};
   (req.headers.cookie || '').split(';').forEach(function (c) {
-    var parts = c.trim().split('=');
-    if (parts.length === 2) cookies[parts[0]] = parts[1];
+    var idx = c.indexOf('=');
+    if (idx > 0) {
+      cookies[c.substring(0, idx).trim()] = c.substring(idx + 1).trim();
+    }
   });
   return cookies;
 }
 
 http.createServer((req, res) => {
-  const parsed = url.parse(req.url);
-  let pathname = decodeURIComponent(parsed.pathname);
+  const parsed = new URL(req.url, 'http://localhost');
+  let pathname;
+  try {
+    pathname = decodeURIComponent(parsed.pathname);
+  } catch {
+    res.writeHead(400, SECURITY_HEADERS);
+    return res.end('Bad Request');
+  }
 
   // Visitor counter API
   if (pathname === '/api/visitors') {
     var cookies = parseCookies(req);
-    var count = readCounter();
-    var headers = {
+    var headers = Object.assign({
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache',
-    };
+    }, SECURITY_HEADERS);
 
     if (!cookies.visited) {
-      count++;
-      writeCounter(count);
-      headers['Set-Cookie'] = 'visited=1; Path=/; Max-Age=86400; SameSite=Lax';
+      visitorCount++;
+      writeCounter(visitorCount);
+      headers['Set-Cookie'] = 'visited=1; Path=/; Max-Age=86400; SameSite=Lax; HttpOnly; Secure';
     }
 
     res.writeHead(200, headers);
-    return res.end(JSON.stringify({ count }));
+    return res.end(JSON.stringify({ count: visitorCount }));
   }
 
   if (pathname === '/') pathname = '/index.html';
 
-  // Block visitors.json from being served
-  if (pathname === '/visitors.json') {
-    res.writeHead(403);
+  // Allowlist check: only serve files from allowed dirs/paths
+  const isAllowed = ALLOWED_FILES.includes(pathname) ||
+                    ALLOWED_DIRS.some(function (dir) { return pathname.startsWith(dir); });
+  if (!isAllowed) {
+    res.writeHead(404, SECURITY_HEADERS);
+    return res.end('Not Found');
+  }
+
+  // Path traversal protection
+  const filePath = path.resolve(path.join(__dirname, pathname));
+  if (!filePath.startsWith(PROJECT_ROOT)) {
+    res.writeHead(403, SECURITY_HEADERS);
     return res.end('Forbidden');
   }
 
-  const filePath = path.join(__dirname, pathname);
   const ext = path.extname(filePath).toLowerCase();
 
   fs.readFile(filePath, (err, data) => {
     if (err) {
-      fs.readFile(path.join(__dirname, 'index.html'), (err2, html) => {
-        if (err2) {
-          res.writeHead(500);
-          return res.end('Internal Server Error');
-        }
-        res.writeHead(200, {
-          'Content-Type': 'text/html',
-          'Cache-Control': 'no-cache',
-        });
-        res.end(html);
-      });
-      return;
+      res.writeHead(404, Object.assign({ 'Content-Type': 'text/plain' }, SECURITY_HEADERS));
+      return res.end('Not Found');
     }
 
-    res.writeHead(200, {
+    res.writeHead(200, Object.assign({
       'Content-Type': MIME[ext] || 'application/octet-stream',
       'Cache-Control': 'no-cache',
-    });
+    }, SECURITY_HEADERS));
     res.end(data);
   });
 }).listen(PORT, '127.0.0.1', () => {

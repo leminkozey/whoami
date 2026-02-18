@@ -32,6 +32,9 @@
       if (skipped) return;
       if (i >= bootLines.length) {
         clearInterval(interval);
+        skipped = true;
+        document.removeEventListener('keydown', skipBoot);
+        document.removeEventListener('click', skipBoot);
         setTimeout(finishBoot, 600);
         return;
       }
@@ -81,13 +84,18 @@
   }
 
   // Start boot on load
-  window.addEventListener('DOMContentLoaded', runBoot);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', runBoot);
+  } else {
+    runBoot();
+  }
 
 
   // ─── Three.js Hero — Wireframe Globe ─────────────────────────
   function initThreeJS() {
     const container = document.getElementById('three-container');
     if (!container || typeof THREE === 'undefined') return;
+    if (container.querySelector('canvas')) return;
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
@@ -377,7 +385,7 @@
     history: function () {
       if (commandHistory.length === 0) return ['No commands in history.'];
       return commandHistory.map(function (cmd, i) {
-        return '  ' + (i + 1) + '  ' + cmd;
+        return '  ' + (i + 1) + '  ' + escapeHTML(cmd);
       });
     },
 
@@ -572,16 +580,10 @@
     });
   }
 
-  function playKeySound() {
-    if (soundMuted) return;
-    if (!audioCtx) {
-      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-      catch (e) { return; }
-    }
+  function doPlaySound() {
     var t = audioCtx.currentTime;
-    var duration = 0.012 + Math.random() * 0.008;
+    var duration = 0.04 + Math.random() * 0.02;
 
-    // Short noise burst = mechanical click
     var bufferSize = Math.ceil(audioCtx.sampleRate * duration);
     var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     var data = buffer.getChannelData(0);
@@ -592,14 +594,13 @@
     var noise = audioCtx.createBufferSource();
     noise.buffer = buffer;
 
-    // Bandpass filter for clicky tone
     var filter = audioCtx.createBiquadFilter();
     filter.type = 'bandpass';
     filter.frequency.value = 1800 + Math.random() * 600;
     filter.Q.value = 2;
 
     var gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.2, t);
+    gain.gain.setValueAtTime(0.5, t);
     gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
 
     noise.connect(filter);
@@ -607,6 +608,19 @@
     gain.connect(audioCtx.destination);
     noise.start(t);
     noise.stop(t + duration);
+  }
+
+  function playKeySound() {
+    if (soundMuted) return;
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch (e) { return; }
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume().then(doPlaySound);
+      return;
+    }
+    doPlaySound();
   }
 
   // Ghost autocomplete helper
@@ -649,14 +663,9 @@
       }
 
       if (e.key === 'Enter') {
-        // If ghost suggestion is visible, complete it instead of executing
-        if (currentSuggestion) {
-          e.preventDefault();
-          terminalInput.value = currentSuggestion;
-          currentSuggestion = '';
-          if (ghostEl) ghostEl.value = '';
-          return;
-        }
+        // Clear ghost on Enter
+        currentSuggestion = '';
+        if (ghostEl) ghostEl.value = '';
 
         const cmd = terminalInput.value.trim();
         if (!cmd) return;
@@ -779,9 +788,13 @@
 
 
   // ─── Easter Egg: Matrix Rain ─────────────────────────────────
+  var matrixRunning = false;
+
   function triggerMatrixRain() {
+    if (matrixRunning) return;
+    matrixRunning = true;
     var canvas = document.getElementById('matrix-canvas');
-    if (!canvas) return;
+    if (!canvas) { matrixRunning = false; return; }
 
     canvas.classList.add('active');
     var ctx = canvas.getContext('2d');
@@ -820,6 +833,7 @@
       clearInterval(matrixInterval);
       canvas.classList.remove('active');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      matrixRunning = false;
     }, 5000);
   }
 

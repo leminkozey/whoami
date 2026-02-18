@@ -777,11 +777,11 @@ nav a:hover::after {
 
 #terminal-output {
   flex: 1;
+  min-height: 0;
   padding: 16px;
   overflow-y: auto;
   font-size: 13px;
   line-height: 1.7;
-  max-height: 550px;
 }
 
 #terminal-output p {
@@ -1010,7 +1010,7 @@ footer {
     color: var(--text);
   }
 
-  #main-nav a:last-child {
+  #main-nav a:last-of-type {
     border-bottom: none;
   }
 
@@ -1064,11 +1064,13 @@ footer {
   }
 
   .terminal-window {
+    height: auto;
     min-height: 280px;
+    max-height: 400px;
   }
 
   #terminal-output {
-    max-height: 260px;
+    min-height: 0;
     font-size: 12px;
   }
 
