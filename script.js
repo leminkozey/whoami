@@ -737,17 +737,28 @@
     if (!graph) return;
 
     fetch('https://github-contributions-api.jogruber.de/v4/leminkozey?y=last')
-      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
       .then(function (data) {
         var contributions = data.contributions;
-        var totalCount = Object.values(data.total).reduce(function (a, b) { return a + b; }, 0);
+        if (!contributions || !contributions.length) throw new Error('no data');
 
+        var totalCount = 0;
+        Object.values(data.total).forEach(function (v) { totalCount += v; });
         total.innerHTML = '<span>' + totalCount + '</span> contributions in the last year';
 
-        // Group by week
+        // Pad first week so it starts on the correct weekday (0=Sun)
+        var firstDay = new Date(contributions[0].date).getDay();
         var weeks = [];
         var week = [];
-        contributions.forEach(function (day, i) {
+
+        for (var p = 0; p < firstDay; p++) {
+          week.push(null);
+        }
+
+        contributions.forEach(function (day) {
           week.push(day);
           if (week.length === 7) {
             weeks.push(week);
@@ -762,15 +773,20 @@
           w.forEach(function (day) {
             var cell = document.createElement('div');
             cell.className = 'contrib-day';
-            cell.setAttribute('data-level', day.level);
-            cell.setAttribute('data-tooltip', day.count + ' contributions on ' + day.date);
+            if (day) {
+              cell.setAttribute('data-level', day.level);
+              cell.title = day.count + ' contributions on ' + day.date;
+            } else {
+              cell.setAttribute('data-level', '0');
+            }
             col.appendChild(cell);
           });
           graph.appendChild(col);
         });
       })
-      .catch(function () {
+      .catch(function (err) {
         total.textContent = 'could not load contributions.';
+        console.error('Contributions fetch failed:', err);
       });
   }
 
