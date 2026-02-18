@@ -892,7 +892,8 @@ footer {
   }
 
   .visitor-count {
-    display: none;
+    padding: 14px 0;
+    justify-content: center;
   }
 
   #hamburger {
