@@ -32,6 +32,20 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <noscript><style>
+    #boot-screen { display: none !important; }
+    #main-site.hidden { display: block !important; }
+    .reveal-section { opacity: 1 !important; transform: none !important; }
+    #three-container, #visitor-count, #sound-toggle, .terminal-input-line { display: none !important; }
+    #hero { min-height: 80vh; }
+    .noscript-msg { display: block !important; }
+    .skill-fill[data-level="55"] { width: 55% !important; }
+    .skill-fill[data-level="60"] { width: 60% !important; }
+    .skill-fill[data-level="75"] { width: 75% !important; }
+    .skill-fill[data-level="80"] { width: 80% !important; }
+    .skill-fill[data-level="85"] { width: 85% !important; }
+    .skill-fill[data-level="90"] { width: 90% !important; }
+  </style></noscript>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -96,7 +110,7 @@
       <div id="hero-content">
         <p class="hero-prefix">$ whoami</p>
         <h1 class="glitch" data-text="Leminkozey">Leminkozey</h1>
-        <p class="hero-tagline" id="hero-tagline"></p>
+        <p class="hero-tagline" id="hero-tagline">i build tools, break things &amp; fix them &mdash; 17y, germany</p>
         <div class="hero-status">
           <span class="status-dot"></span>
           <span>available for work</span>
@@ -142,6 +156,7 @@
       </div>
       <div class="github-stats">
         <p class="github-total" id="github-total">fetching contributions...</p>
+        <p class="noscript-msg">Enable JavaScript to load the live contribution graph.</p>
         <div id="contribution-graph"></div>
         <div class="github-legend">
           <span class="legend-label">less</span>
@@ -358,6 +373,7 @@
         <div id="terminal-output">
           <p>Welcome to the interactive terminal.</p>
           <p>Type <span class="cmd-highlight">help</span> to see available commands.</p>
+          <p class="noscript-msg">Enable JavaScript to use the interactive terminal.</p>
           <p>&nbsp;</p>
         </div>
         <div class="terminal-input-line">
