@@ -52,6 +52,7 @@
       initThreeJS();
       initRevealAnimations();
       animateSkillBars();
+      initContributions();
     }, 600);
   }
 
@@ -728,6 +729,50 @@
     }
   }
 
+
+  // ─── GitHub Contributions ────────────────────────────────────
+  function initContributions() {
+    var graph = document.getElementById('contribution-graph');
+    var total = document.getElementById('github-total');
+    if (!graph) return;
+
+    fetch('https://github-contributions-api.jogruber.de/v4/leminkozey?y=last')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var contributions = data.contributions;
+        var totalCount = Object.values(data.total).reduce(function (a, b) { return a + b; }, 0);
+
+        total.innerHTML = '<span>' + totalCount + '</span> contributions in the last year';
+
+        // Group by week
+        var weeks = [];
+        var week = [];
+        contributions.forEach(function (day, i) {
+          week.push(day);
+          if (week.length === 7) {
+            weeks.push(week);
+            week = [];
+          }
+        });
+        if (week.length) weeks.push(week);
+
+        weeks.forEach(function (w) {
+          var col = document.createElement('div');
+          col.className = 'contrib-week';
+          w.forEach(function (day) {
+            var cell = document.createElement('div');
+            cell.className = 'contrib-day';
+            cell.setAttribute('data-level', day.level);
+            cell.setAttribute('data-tooltip', day.count + ' contributions on ' + day.date);
+            col.appendChild(cell);
+          });
+          graph.appendChild(col);
+        });
+      })
+      .catch(function () {
+        total.textContent = 'could not load contributions.';
+      });
+  }
 
   // ─── Hamburger Menu ──────────────────────────────────────────
   var hamburger = document.getElementById('hamburger');
