@@ -799,6 +799,9 @@
           });
           graph.appendChild(col);
         });
+
+        // Auto-scroll to show most recent contributions
+        graph.scrollLeft = graph.scrollWidth;
       })
       .catch(function (err) {
         total.textContent = 'could not load contributions.';
