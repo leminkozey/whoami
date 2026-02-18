@@ -102,6 +102,10 @@
     if (!container || typeof THREE === 'undefined') return;
     if (container.querySelector('canvas')) return;
 
+    // Remove loader spinner
+    var loader = document.getElementById('three-loader');
+    if (loader) loader.remove();
+
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
       60,
