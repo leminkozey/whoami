@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 60" width="320" height="60">
+  <style>
+    text { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-weight: 700; }
+    .cursor { animation: blink 0.8s step-end infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+  </style>
+  <text x="0" y="44" font-size="40" fill="#00ffc8">&gt;</text>
+  <text x="30" y="44" font-size="40" fill="#f0f6fc">leminkozey</text>
+  <text class="cursor" x="286" y="44" font-size="40" fill="#00ffc8">_</text>
+</svg>
