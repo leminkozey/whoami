@@ -394,17 +394,20 @@ nav a:hover::after {
 .github-stats {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 16px;
 }
 
 .github-total {
   color: var(--text-dim);
   font-size: 13px;
+  text-align: center;
 }
 
 .github-total span {
   color: var(--accent);
   font-weight: 700;
+  font-size: 20px;
 }
 
 #contribution-graph {
@@ -412,6 +415,7 @@ nav a:hover::after {
   gap: 3px;
   overflow-x: auto;
   padding-bottom: 4px;
+  max-width: 100%;
 }
 
 .contrib-week {
@@ -453,6 +457,7 @@ nav a:hover::after {
 .github-legend {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   margin-top: 4px;
 }
