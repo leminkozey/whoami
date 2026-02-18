@@ -63,6 +63,7 @@
       initRevealAnimations();
       animateSkillBars();
       initContributions();
+      initVisitorCount();
     }, 600);
   }
 
@@ -851,6 +852,17 @@
         total.textContent = 'could not load contributions.';
         console.error('Contributions fetch failed:', err);
       });
+  }
+
+  // ─── Visitor Counter ─────────────────────────────────────────
+  function initVisitorCount() {
+    fetch('/api/visitors')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var el = document.getElementById('visitor-num');
+        if (el) el.textContent = data.count;
+      })
+      .catch(function () {});
   }
 
   // ─── Hamburger Menu ──────────────────────────────────────────
