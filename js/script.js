@@ -767,6 +767,11 @@
         });
         if (week.length) weeks.push(week);
 
+        // Tooltip element (lives outside graph so it won't be clipped)
+        var tooltip = document.createElement('div');
+        tooltip.className = 'contrib-tooltip';
+        document.body.appendChild(tooltip);
+
         weeks.forEach(function (w) {
           var col = document.createElement('div');
           col.className = 'contrib-week';
@@ -775,7 +780,18 @@
             cell.className = 'contrib-day';
             if (day) {
               cell.setAttribute('data-level', day.level);
-              cell.title = day.count + ' contributions on ' + day.date;
+              cell.setAttribute('data-count', day.count);
+              cell.setAttribute('data-date', day.date);
+              cell.addEventListener('mouseenter', function (e) {
+                tooltip.textContent = day.count + ' contributions on ' + day.date;
+                tooltip.classList.add('visible');
+                var rect = cell.getBoundingClientRect();
+                tooltip.style.left = (rect.left + rect.width / 2) + 'px';
+                tooltip.style.top = (rect.top - 8) + 'px';
+              });
+              cell.addEventListener('mouseleave', function () {
+                tooltip.classList.remove('visible');
+              });
             } else {
               cell.setAttribute('data-level', '0');
             }

@@ -437,9 +437,8 @@ nav a:hover::after {
 .contrib-day[data-level="3"] { background: #00a87e; }
 .contrib-day[data-level="4"] { background: #00ffc8; }
 
-.contrib-day:hover::after {
-  content: attr(data-tooltip);
-  position: absolute;
+.contrib-tooltip {
+  position: fixed;
   background: #1a1a1a;
   border: 1px solid #2a2a2a;
   color: var(--text);
@@ -447,12 +446,16 @@ nav a:hover::after {
   padding: 4px 8px;
   border-radius: 4px;
   white-space: nowrap;
-  transform: translate(-50%, -130%);
   pointer-events: none;
-  z-index: 10;
+  z-index: 1000;
+  transform: translate(-50%, -100%);
+  opacity: 0;
+  transition: opacity 0.15s;
 }
 
-.contrib-day { position: relative; }
+.contrib-tooltip.visible {
+  opacity: 1;
+}
 
 .github-legend {
   display: flex;
