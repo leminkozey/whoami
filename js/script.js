@@ -50,7 +50,6 @@
 
     // Random hero tagline
     var taglines = [
-      'azubi dev & homelab enthusiast \u2014 17y, germany',
       'i build tools, break things & fix them \u2014 17y, germany',
       'building things that actually work \u2014 17y, germany',
       'turning ideas into deployments \u2014 17y, germany',
