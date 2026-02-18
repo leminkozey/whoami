@@ -220,7 +220,9 @@
         '  <span class="cmd-highlight">banner</span>      — show ASCII art',
         '  <span class="cmd-highlight">help</span>        — show this message',
         '',
-        '  ...try some creative commands too ;)',
+        '  ...try some creative commands too, like <span class="cmd-highlight">' +
+        ['sudo rm -rf /', 'hack', 'matrix', 'ls', 'vim', 'exit', 'cat readme.md', 'sudo'][Math.floor(Math.random() * 8)] +
+        '</span> ...there is more ;)',
       ];
     },
 

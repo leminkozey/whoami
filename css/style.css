@@ -661,7 +661,7 @@ nav a:hover::after {
   border: 1px solid #1e1e1e;
   border-radius: 8px;
   overflow: hidden;
-  min-height: 350px;
+  height: 500px;
   display: flex;
   flex-direction: column;
 }
@@ -701,7 +701,7 @@ nav a:hover::after {
   overflow-y: auto;
   font-size: 13px;
   line-height: 1.7;
-  max-height: 400px;
+  max-height: 550px;
 }
 
 #terminal-output p {
