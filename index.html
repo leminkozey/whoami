@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>whoami</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Boot Screen Overlay -->
+  <div id="boot-screen">
+    <div id="boot-log"></div>
+    <div id="boot-cursor" class="cursor-blink">_</div>
+  </div>
+
+  <!-- Main Site (hidden until boot completes) -->
+  <div id="main-site" class="hidden">
+
+    <!-- Header -->
+    <header>
+      <div id="logo" title="Click me...">
+        <span class="logo-bracket">[</span>
+        <span class="logo-text">whoami</span>
+        <span class="logo-bracket">]</span>
+      </div>
+      <nav>
+        <a href="#about">about</a>
+        <a href="#projects">projects</a>
+        <a href="#skills">skills</a>
+        <a href="#contact">contact</a>
+        <a href="#terminal">terminal</a>
+      </nav>
+    </header>
+
+    <!-- Hero Section with 3D Element -->
+    <section id="hero">
+      <div id="three-container"></div>
+      <div id="hero-content">
+        <p class="hero-prefix">$ whoami</p>
+        <h1 class="glitch" data-text="Leminkozey">Leminkozey</h1>
+        <p class="hero-tagline">azubi dev &amp; homelab enthusiast &mdash; 17y, germany</p>
+        <div class="hero-status">
+          <span class="status-dot"></span>
+          <span>available for work</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="section reveal-section">
+      <div class="section-header">
+        <span class="section-tag">// about</span>
+        <div class="section-line"></div>
+      </div>
+      <div class="section-content">
+        <div class="about-card">
+          <pre class="about-json">
+{
+  "name": "Manu",
+  "alias": "Leminkozey",
+  "age": 17,
+  "location": "Germany",
+  "role": "Azubi Fachinformatiker (Anwendungsentwicklung)",
+  "interests": [
+    "self-hosting",
+    "homelab",
+    "web development"
+  ],
+  "currently": "building tools for my local network",
+  "fun_fact": "I run a full network dashboard on a Raspberry Pi"
+}</pre>
+        </div>
+        <div class="about-text">
+          <p>17-year-old IT trainee from Germany, specializing in application development. I build self-hosted tools for my homelab and local network &mdash; from Kanban boards to network dashboards to offline Wikipedia archives. I like shipping real projects, learning by doing, and making things that are actually useful. When I'm not coding, I'm probably tinkering with my Raspberry Pi or figuring out how to dockerize everything.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Projects Section -->
+    <section id="projects" class="section reveal-section">
+      <div class="section-header">
+        <span class="section-tag">// projects</span>
+        <div class="section-line"></div>
+      </div>
+      <div class="projects-grid">
+
+        <div class="project-card">
+          <div class="project-header">
+            <span class="project-icon">&#9881;</span>
+            <div class="project-links">
+              <a href="https://github.com/leminkozey/Lemin-kanban" target="_blank" rel="noopener">&#8599;</a>
+            </div>
+          </div>
+          <h3>Lemin-kanban</h3>
+          <p>Minimalist Kanban board for personal task management. Drag &amp; drop, labels, checklists, due dates, dark mode, SSE live updates, and an MCP server with 17 AI tools.</p>
+          <div class="project-tags">
+            <span>Next.js</span>
+            <span>TypeScript</span>
+            <span>SQLite</span>
+            <span>Prisma</span>
+          </div>
+        </div>
+
+        <div class="project-card">
+          <div class="project-header">
+            <span class="project-icon">&#9881;</span>
+            <div class="project-links">
+              <a href="https://github.com/leminkozey/Netzwerk-Manager" target="_blank" rel="noopener">&#8599;</a>
+            </div>
+          </div>
+          <h3>Netzwerk-Manager</h3>
+          <p>Self-hosted network dashboard with device monitoring, Wake-on-LAN, SSH controls, Pi-hole analytics, web terminal with 2FA, and speed testing.</p>
+          <div class="project-tags">
+            <span>Node.js</span>
+            <span>JavaScript</span>
+            <span>Raspberry Pi</span>
+          </div>
+        </div>
+
+        <div class="project-card">
+          <div class="project-header">
+            <span class="project-icon">&#9881;</span>
+            <div class="project-links">
+              <a href="https://github.com/leminkozey/OfflineWiki" target="_blank" rel="noopener">&#8599;</a>
+            </div>
+          </div>
+          <h3>OfflineWiki</h3>
+          <p>Local Wikipedia archive powered by Kiwix. Offline search, favorites, history, theme switching, glassmorphic UI, and Docker deployment.</p>
+          <div class="project-tags">
+            <span>HTML/CSS/JS</span>
+            <span>Docker</span>
+            <span>Kiwix</span>
+          </div>
+        </div>
+
+        <div class="project-card">
+          <div class="project-header">
+            <span class="project-icon">&#9881;</span>
+            <div class="project-links">
+              <a href="https://github.com/leminkozey/whoami" target="_blank" rel="noopener">&#8599;</a>
+            </div>
+          </div>
+          <h3>whoami</h3>
+          <p>This portfolio. Terminal-themed interactive site with boot sequence, 3D hero, command-line interface, and hidden easter eggs. Zero frameworks.</p>
+          <div class="project-tags">
+            <span>HTML</span>
+            <span>CSS</span>
+            <span>JavaScript</span>
+            <span>Three.js</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section id="skills" class="section reveal-section">
+      <div class="section-header">
+        <span class="section-tag">// skills</span>
+        <div class="section-line"></div>
+      </div>
+      <div class="skills-container">
+
+        <div class="skill-category">
+          <h3>&gt; languages</h3>
+          <div class="skill-bars">
+            <div class="skill-item">
+              <span class="skill-name">JavaScript</span>
+              <div class="skill-bar"><div class="skill-fill" data-level="90"></div></div>
+            </div>
+            <div class="skill-item">
+              <span class="skill-name">TypeScript</span>
+              <div class="skill-bar"><div class="skill-fill" data-level="85"></div></div>
+            </div>
+            <div class="skill-item">
+              <span class="skill-name">HTML / CSS</span>
+              <div class="skill-bar"><div class="skill-fill" data-level="90"></div></div>
+            </div>
+            <div class="skill-item">
+              <span class="skill-name">C# / .NET</span>
+              <div class="skill-bar"><div class="skill-fill" data-level="60"></div></div>
+            </div>
+            <div class="skill-item">
+              <span class="skill-name">Java</span>
+              <div class="skill-bar"><div class="skill-fill" data-level="55"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="skill-category">
+          <h3>&gt; frameworks</h3>
+          <div class="skill-bars">
+            <div class="skill-item">
+              <span class="skill-name">Next.js</span>
+              <div class="skill-bar"><div class="skill-fill" data-level="85"></div></div>
+            </div>
+            <div class="skill-item">
+              <span class="skill-name">Node.js</span>
+              <div class="skill-bar"><div class="skill-fill" data-level="90"></div></div>
+            </div>
+            <div class="skill-item">
+              <span class="skill-name">Tailwind CSS</span>
+              <div class="skill-bar"><div class="skill-fill" data-level="80"></div></div>
+            </div>
+            <div class="skill-item">
+              <span class="skill-name">Prisma</span>
+              <div class="skill-bar"><div class="skill-fill" data-level="75"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="skill-category">
+          <h3>&gt; tools</h3>
+          <div class="skill-bars">
+            <div class="skill-item">
+              <span class="skill-name">Docker</span>
+              <div class="skill-bar"><div class="skill-fill" data-level="85"></div></div>
+            </div>
+            <div class="skill-item">
+              <span class="skill-name">Git</span>
+              <div class="skill-bar"><div class="skill-fill" data-level="85"></div></div>
+            </div>
+            <div class="skill-item">
+              <span class="skill-name">Linux / Raspberry Pi</span>
+              <div class="skill-bar"><div class="skill-fill" data-level="80"></div></div>
+            </div>
+            <div class="skill-item">
+              <span class="skill-name">SQLite</span>
+              <div class="skill-bar"><div class="skill-fill" data-level="75"></div></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="section reveal-section">
+      <div class="section-header">
+        <span class="section-tag">// contact</span>
+        <div class="section-line"></div>
+      </div>
+      <div class="contact-content">
+        <p class="contact-prompt">$ ping leminkozey --message</p>
+        <p class="contact-text">Got a project idea, want to collaborate, or just talk tech? Hit me up. I'm always open to interesting conversations.</p>
+        <div class="contact-links">
+          <a href="mailto:contact@leminkozey.me" class="contact-link">
+            <span class="contact-icon">&gt;</span> contact@leminkozey.me
+          </a>
+          <a href="https://github.com/leminkozey" target="_blank" rel="noopener" class="contact-link">
+            <span class="contact-icon">&gt;</span> github.com/leminkozey
+          </a>
+          <a href="https://leminkozey.me" target="_blank" rel="noopener" class="contact-link">
+            <span class="contact-icon">&gt;</span> leminkozey.me
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive Terminal -->
+    <section id="terminal" class="section">
+      <div class="section-header">
+        <span class="section-tag">// terminal</span>
+        <div class="section-line"></div>
+      </div>
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-buttons">
+            <span class="term-btn red"></span>
+            <span class="term-btn yellow"></span>
+            <span class="term-btn green"></span>
+          </div>
+          <span class="terminal-title">guest@whoami:~$</span>
+        </div>
+        <div id="terminal-output">
+          <p>Welcome to the interactive terminal.</p>
+          <p>Type <span class="cmd-highlight">help</span> to see available commands.</p>
+          <p>&nbsp;</p>
+        </div>
+        <div class="terminal-input-line">
+          <span class="terminal-prompt">visitor@whoami:~$&nbsp;</span>
+          <input type="text" id="terminal-input" autocomplete="off" spellcheck="false" autofocus>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <p>built with raw HTML, CSS &amp; JS &mdash; no frameworks were harmed</p>
+      <p class="footer-small">&copy; 2026 Leminkozey</p>
+    </footer>
+
+  </div>
+
+  <!-- Easter Egg: Matrix Rain Canvas (hidden until triggered) -->
+  <canvas id="matrix-canvas"></canvas>
+
+  <!-- Three.js via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
