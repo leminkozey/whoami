@@ -27,7 +27,9 @@
 
   function runBoot() {
     let i = 0;
+    let skipped = false;
     const interval = setInterval(() => {
+      if (skipped) return;
       if (i >= bootLines.length) {
         clearInterval(interval);
         setTimeout(finishBoot, 600);
@@ -42,6 +44,17 @@
       bootLog.scrollTop = bootLog.scrollHeight;
       i++;
     }, 180);
+
+    function skipBoot() {
+      if (skipped) return;
+      skipped = true;
+      clearInterval(interval);
+      finishBoot();
+      document.removeEventListener('keydown', skipBoot);
+      document.removeEventListener('click', skipBoot);
+    }
+    document.addEventListener('keydown', skipBoot);
+    document.addEventListener('click', skipBoot);
   }
 
   function finishBoot() {
