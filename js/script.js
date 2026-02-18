@@ -548,9 +548,48 @@
     },
   };
 
+  // ─── Typing Sound (Web Audio API) ─────────────────────────
+  var audioCtx = null;
+  function playKeySound() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch (e) { return; }
+    }
+    var t = audioCtx.currentTime;
+    var duration = 0.012 + Math.random() * 0.008;
+
+    // Short noise burst = mechanical click
+    var bufferSize = Math.ceil(audioCtx.sampleRate * duration);
+    var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    var data = buffer.getChannelData(0);
+    for (var i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    }
+
+    var noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+
+    // Bandpass filter for clicky tone
+    var filter = audioCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 1800 + Math.random() * 600;
+    filter.Q.value = 2;
+
+    var gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.2, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+    noise.start(t);
+    noise.stop(t + duration);
+  }
+
   // Process terminal input
   if (terminalInput) {
     terminalInput.addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') playKeySound();
       if (e.key === 'Enter') {
         const cmd = terminalInput.value.trim();
         if (!cmd) return;

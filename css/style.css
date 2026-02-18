@@ -907,16 +907,15 @@ footer {
   #main-nav {
     display: none;
     position: fixed;
-    top: 57px;
+    top: 0;
     left: 0;
     right: 0;
-    background: rgba(10, 10, 10, 0.97);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid #1a1a1a;
+    bottom: 0;
+    background: var(--bg);
     flex-direction: column;
-    padding: 20px 24px;
+    padding: 80px 24px 24px;
     gap: 0;
-    z-index: 150;
+    z-index: 99;
   }
 
   #main-nav.open {
