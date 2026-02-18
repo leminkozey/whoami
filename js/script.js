@@ -47,6 +47,17 @@
   function finishBoot() {
     bootScreen.classList.add('fade-out');
     mainSite.classList.remove('hidden');
+
+    // Random hero tagline
+    var taglines = [
+      'azubi dev & homelab enthusiast \u2014 17y, germany',
+      'i build tools, break things & fix them \u2014 17y, germany',
+      'building things that actually work \u2014 17y, germany',
+      'turning ideas into deployments \u2014 17y, germany',
+    ];
+    var taglineEl = document.getElementById('hero-tagline');
+    if (taglineEl) taglineEl.textContent = taglines[Math.floor(Math.random() * taglines.length)];
+
     setTimeout(() => {
       bootScreen.style.display = 'none';
       initThreeJS();
