@@ -729,6 +729,31 @@
   }
 
 
+  // ─── Hamburger Menu ──────────────────────────────────────────
+  var hamburger = document.getElementById('hamburger');
+  var mainNav = document.getElementById('main-nav');
+
+  if (hamburger && mainNav) {
+    hamburger.addEventListener('click', function () {
+      hamburger.classList.toggle('open');
+      mainNav.classList.toggle('open');
+    });
+
+    mainNav.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        hamburger.classList.remove('open');
+        mainNav.classList.remove('open');
+      });
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!hamburger.contains(e.target) && !mainNav.contains(e.target)) {
+        hamburger.classList.remove('open');
+        mainNav.classList.remove('open');
+      }
+    });
+  }
+
   // ─── Smooth scroll for nav links ────────────────────────────
   document.querySelectorAll('nav a[href^="#"]').forEach(function (link) {
     link.addEventListener('click', function (e) {
