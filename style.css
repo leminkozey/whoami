@@ -421,6 +421,9 @@ nav a:hover::after {
   color: var(--text-dim);
   font-size: 18px;
   transition: color 0.3s;
+  padding: 14px;
+  margin: -14px;
+  display: inline-block;
 }
 
 .project-links a:hover {

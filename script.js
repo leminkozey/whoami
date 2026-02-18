@@ -303,7 +303,7 @@
         '',
         '  Email  : contact@leminkozey.me',
         '  GitHub : github.com/leminkozey',
-        '  Web    : leminkozey.me',
+        '  TikTok : tiktok.com/@leminkozey',
         '',
         'I\'m always open to interesting conversations.',
       ];
