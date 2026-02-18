@@ -580,10 +580,16 @@
     });
   }
 
-  function doPlaySound() {
+  function playKeySound() {
+    if (soundMuted) return;
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch (e) { return; }
+    }
     var t = audioCtx.currentTime;
-    var duration = 0.04 + Math.random() * 0.02;
+    var duration = 0.012 + Math.random() * 0.008;
 
+    // Short noise burst = mechanical click
     var bufferSize = Math.ceil(audioCtx.sampleRate * duration);
     var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     var data = buffer.getChannelData(0);
@@ -594,13 +600,14 @@
     var noise = audioCtx.createBufferSource();
     noise.buffer = buffer;
 
+    // Bandpass filter for clicky tone
     var filter = audioCtx.createBiquadFilter();
     filter.type = 'bandpass';
     filter.frequency.value = 1800 + Math.random() * 600;
     filter.Q.value = 2;
 
     var gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.5, t);
+    gain.gain.setValueAtTime(0.2, t);
     gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
 
     noise.connect(filter);
@@ -608,19 +615,6 @@
     gain.connect(audioCtx.destination);
     noise.start(t);
     noise.stop(t + duration);
-  }
-
-  function playKeySound() {
-    if (soundMuted) return;
-    if (!audioCtx) {
-      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-      catch (e) { return; }
-    }
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume().then(doPlaySound);
-      return;
-    }
-    doPlaySound();
   }
 
   // Ghost autocomplete helper
