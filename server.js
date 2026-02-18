@@ -31,10 +31,11 @@ const MIME = {
 
 const SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'DENY',
+  'X-Frame-Options': 'DENY', // Legacy fallback; CSP frame-ancestors 'none' is the modern equivalent
   'Referrer-Policy': 'strict-origin-when-cross-origin',
+  // HSTS: effective only behind TLS-terminating proxy (Cloudflare Tunnel)
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-  'Content-Security-Policy': "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://github-contributions-api.jogruber.de",
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://github-contributions-api.jogruber.de; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
 };
 
@@ -53,7 +54,13 @@ let visitorCount = (function () {
 })();
 
 function writeCounter(count) {
-  fs.writeFile(COUNTER_FILE, JSON.stringify({ count }), () => {});
+  const tmp = COUNTER_FILE + '.tmp';
+  fs.writeFile(tmp, JSON.stringify({ count }), (err) => {
+    if (err) return console.error('Counter write failed:', err);
+    fs.rename(tmp, COUNTER_FILE, (err) => {
+      if (err) console.error('Counter rename failed:', err);
+    });
+  });
 }
 
 function parseCookies(req) {
@@ -67,7 +74,13 @@ function parseCookies(req) {
   return cookies;
 }
 
-http.createServer((req, res) => {
+const server = http.createServer((req, res) => {
+  // Request size limit
+  if (req.url.length > 2048) {
+    res.writeHead(414, SECURITY_HEADERS);
+    return res.end('URI Too Long');
+  }
+
   const parsed = new URL(req.url, 'http://localhost');
   let pathname;
   try {
@@ -91,11 +104,15 @@ http.createServer((req, res) => {
       headers['Set-Cookie'] = 'visited=1; Path=/; Max-Age=86400; SameSite=Lax; HttpOnly; Secure';
     }
 
+    // No gzip on API responses (BREACH mitigation)
     res.writeHead(200, headers);
     return res.end(JSON.stringify({ count: visitorCount }));
   }
 
   if (pathname === '/') pathname = '/index.html';
+
+  // Normalize to collapse path segments like /../ before allowlist check
+  pathname = path.posix.normalize(pathname);
 
   // Allowlist check: only serve files from allowed dirs/paths
   const isAllowed = ALLOWED_FILES.includes(pathname) ||
@@ -135,7 +152,7 @@ http.createServer((req, res) => {
       'Cache-Control': cacheControl,
     }, SECURITY_HEADERS);
 
-    // Gzip compression for text-based content
+    // Gzip compression for static files only (not API — avoids BREACH-style timing)
     var acceptEncoding = req.headers['accept-encoding'] || '';
     if (COMPRESSIBLE.has(contentType) && acceptEncoding.includes('gzip')) {
       zlib.gzip(data, function (err, compressed) {
@@ -153,6 +170,12 @@ http.createServer((req, res) => {
       res.end(data);
     }
   });
-}).listen(PORT, '127.0.0.1', () => {
+});
+
+server.timeout = 30000;
+server.keepAliveTimeout = 15000;
+
+server.listen(PORT, '127.0.0.1', () => {
   console.log(`Serving on http://127.0.0.1:${PORT}`);
 });
+

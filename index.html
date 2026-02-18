@@ -76,7 +76,7 @@
 
     <!-- Header -->
     <header>
-      <div id="logo" title="Click me...">
+      <div id="logo">
         <span class="logo-prompt">&gt;</span>
         <span class="logo-name">leminkozey</span>
         <span class="logo-cursor">_</span>
@@ -255,6 +255,7 @@
       </div>
       <div class="skills-container">
 
+        <!-- NOTE: When changing data-level values, also update the <noscript> block in <head> -->
         <div class="skill-category">
           <h3>&gt; languages</h3>
           <div class="skill-bars">
@@ -357,7 +358,7 @@
         <span class="section-tag">// terminal</span>
         <div class="section-line"></div>
       </div>
-      <button id="sound-toggle" class="sound-toggle" title="Toggle typing sound">
+      <button id="sound-toggle" class="sound-toggle" title="Toggle typing sound" aria-label="Toggle typing sound">
         <svg class="sound-icon sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
         <svg class="sound-icon sound-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
       </button>
@@ -379,9 +380,9 @@
         <div class="terminal-input-line">
           <span class="terminal-prompt">visitor@whoami:~$&nbsp;</span>
           <div class="terminal-input-wrapper">
-            <input id="terminal-ghost" class="terminal-ghost" readonly tabindex="-1" aria-hidden="true">
+            <span id="terminal-ghost" class="terminal-ghost" aria-hidden="true"></span>
             <label for="terminal-input" class="sr-only">Terminal command input</label>
-            <input type="text" id="terminal-input" autocomplete="off" spellcheck="false" autofocus>
+            <input type="text" id="terminal-input" autocomplete="off" spellcheck="false">
           </div>
         </div>
       </div>

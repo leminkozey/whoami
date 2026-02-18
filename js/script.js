@@ -169,9 +169,12 @@
       mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
     });
 
-    // Animation loop
+    // Animation loop (pauses when tab is hidden)
+    var animating = true;
+    var animFrameId = null;
     function animate() {
-      requestAnimationFrame(animate);
+      if (!animating) { animFrameId = null; return; }
+      animFrameId = requestAnimationFrame(animate);
       const time = Date.now() * 0.001;
 
       mesh1.rotation.y = time * 0.15;
@@ -191,11 +194,27 @@
     }
     animate();
 
-    // Resize
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) {
+        animating = false;
+        if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
+      } else {
+        if (!animating) {
+          animating = true;
+          animate();
+        }
+      }
+    });
+
+    // Resize (debounced)
+    var resizeTimer;
     window.addEventListener('resize', function () {
-      camera.aspect = container.clientWidth / container.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(container.clientWidth, container.clientHeight);
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+      }, 150);
     });
   }
 
@@ -592,8 +611,13 @@
   function playKeySound() {
     if (soundMuted) return;
     if (!audioCtx) {
-      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-      catch (e) { return; }
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) { return; }
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+      return;
     }
     var t = audioCtx.currentTime;
     var duration = 0.012 + Math.random() * 0.008;
@@ -633,13 +657,13 @@
   function updateGhost() {
     var input = terminalInput.value.toLowerCase();
     currentSuggestion = '';
-    if (ghostEl) ghostEl.value = '';
+    if (ghostEl) ghostEl.textContent = '';
     if (input.length < 2) return;
     var allCmds = Object.keys(commands);
     for (var i = 0; i < allCmds.length; i++) {
       if (allCmds[i].indexOf(input) === 0 && allCmds[i] !== input) {
         currentSuggestion = allCmds[i];
-        if (ghostEl) ghostEl.value = currentSuggestion;
+        if (ghostEl) ghostEl.textContent = currentSuggestion;
         return;
       }
     }
@@ -660,7 +684,7 @@
         if (currentSuggestion) {
           terminalInput.value = currentSuggestion;
           currentSuggestion = '';
-          if (ghostEl) ghostEl.value = '';
+          if (ghostEl) ghostEl.textContent = '';
         }
         return;
       }
@@ -668,7 +692,7 @@
       if (e.key === 'Enter') {
         // Clear ghost on Enter
         currentSuggestion = '';
-        if (ghostEl) ghostEl.value = '';
+        if (ghostEl) ghostEl.textContent = '';
 
         const cmd = terminalInput.value.trim();
         if (!cmd) return;
@@ -701,7 +725,7 @@
         appendToTerminal('&nbsp;');
         terminalInput.value = '';
         currentSuggestion = '';
-        if (ghostEl) ghostEl.value = '';
+        if (ghostEl) ghostEl.textContent = '';
       }
 
       // Command history navigation
@@ -712,7 +736,7 @@
           terminalInput.value = commandHistory[historyIndex];
         }
         currentSuggestion = '';
-        if (ghostEl) ghostEl.value = '';
+        if (ghostEl) ghostEl.textContent = '';
       }
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -724,7 +748,7 @@
           terminalInput.value = '';
         }
         currentSuggestion = '';
-        if (ghostEl) ghostEl.value = '';
+        if (ghostEl) ghostEl.textContent = '';
       }
     });
 
@@ -921,7 +945,13 @@
 
         var totalCount = 0;
         Object.values(data.total).forEach(function (v) { totalCount += v; });
-        total.innerHTML = '<span>' + totalCount + '</span> contributions in the last year';
+        if (total) {
+          total.textContent = '';
+          var countSpan = document.createElement('span');
+          countSpan.textContent = totalCount;
+          total.appendChild(countSpan);
+          total.appendChild(document.createTextNode(' contributions in the last year'));
+        }
 
         // Pad first week so it starts on the correct weekday (0=Sun)
         var firstDay = new Date(contributions[0].date).getDay();
@@ -946,6 +976,11 @@
         tooltip.className = 'contrib-tooltip';
         document.body.appendChild(tooltip);
 
+        // Hide tooltip when scrolling away
+        window.addEventListener('scroll', function () {
+          tooltip.classList.remove('visible');
+        }, { passive: true });
+
         weeks.forEach(function (w) {
           var col = document.createElement('div');
           col.className = 'contrib-week';
@@ -960,8 +995,11 @@
                 tooltip.textContent = day.count + ' contributions on ' + day.date;
                 tooltip.classList.add('visible');
                 var rect = cell.getBoundingClientRect();
-                tooltip.style.left = (rect.left + rect.width / 2) + 'px';
                 tooltip.style.top = (rect.top - 8) + 'px';
+                var tooltipWidth = tooltip.offsetWidth;
+                var maxLeft = window.innerWidth - tooltipWidth - 8;
+                var currentLeft = rect.left + rect.width / 2;
+                tooltip.style.left = Math.min(currentLeft, maxLeft) + 'px';
               });
               cell.addEventListener('mouseleave', function () {
                 tooltip.classList.remove('visible');
@@ -978,7 +1016,7 @@
         graph.scrollLeft = graph.scrollWidth;
       })
       .catch(function (err) {
-        total.textContent = 'could not load contributions.';
+        if (total) total.textContent = 'could not load contributions.';
         console.error('Contributions fetch failed:', err);
       });
   }
@@ -986,10 +1024,13 @@
   // ─── Visitor Counter ─────────────────────────────────────────
   function initVisitorCount() {
     fetch('/api/visitors')
-      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
       .then(function (data) {
         var el = document.getElementById('visitor-num');
-        if (el) el.textContent = data.count;
+        if (el && typeof data.count === 'number') el.textContent = data.count;
       })
       .catch(function () {});
   }
@@ -1009,6 +1050,7 @@
       link.addEventListener('click', function () {
         hamburger.classList.remove('open');
         mainNav.classList.remove('open');
+        hamburger.setAttribute('aria-expanded', 'false');
       });
     });
 
@@ -1016,6 +1058,7 @@
       if (!hamburger.contains(e.target) && !mainNav.contains(e.target)) {
         hamburger.classList.remove('open');
         mainNav.classList.remove('open');
+        hamburger.setAttribute('aria-expanded', 'false');
       }
     });
   }
