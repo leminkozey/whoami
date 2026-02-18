@@ -75,11 +75,16 @@
 
     setTimeout(() => {
       bootScreen.style.display = 'none';
-      initThreeJS();
       initRevealAnimations();
       animateSkillBars();
       initContributions();
       initVisitorCount();
+
+      // Lazy load Three.js after boot
+      var threeScript = document.createElement('script');
+      threeScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+      threeScript.onload = function () { initThreeJS(); };
+      document.head.appendChild(threeScript);
     }, 600);
   }
 
