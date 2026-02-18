@@ -1002,6 +1002,7 @@
     hamburger.addEventListener('click', function () {
       hamburger.classList.toggle('open');
       mainNav.classList.toggle('open');
+      hamburger.setAttribute('aria-expanded', hamburger.classList.contains('open'));
     });
 
     mainNav.querySelectorAll('a').forEach(function (link) {

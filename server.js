@@ -1,6 +1,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 
 const PORT = 8081;
 const COUNTER_FILE = path.join(__dirname, 'visitors.json');
@@ -32,7 +33,16 @@ const SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://github-contributions-api.jogruber.de",
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
 };
+
+// Compressible MIME types
+const COMPRESSIBLE = new Set([
+  'text/html', 'text/css', 'application/javascript',
+  'application/json', 'image/svg+xml', 'application/xml', 'text/plain',
+]);
 
 let visitorCount = (function () {
   try {
@@ -110,11 +120,38 @@ http.createServer((req, res) => {
       return res.end('Not Found');
     }
 
-    res.writeHead(200, Object.assign({
-      'Content-Type': MIME[ext] || 'application/octet-stream',
-      'Cache-Control': 'no-cache',
-    }, SECURITY_HEADERS));
-    res.end(data);
+    const contentType = MIME[ext] || 'application/octet-stream';
+
+    // Smart caching: long cache for assets (images, fonts), short for code/html
+    var cacheControl = 'no-cache';
+    if (pathname.startsWith('/assets/')) {
+      cacheControl = 'public, max-age=2592000, immutable'; // 30 days
+    } else if (ext === '.css' || ext === '.js') {
+      cacheControl = 'public, max-age=3600'; // 1 hour
+    }
+
+    var headers = Object.assign({
+      'Content-Type': contentType,
+      'Cache-Control': cacheControl,
+    }, SECURITY_HEADERS);
+
+    // Gzip compression for text-based content
+    var acceptEncoding = req.headers['accept-encoding'] || '';
+    if (COMPRESSIBLE.has(contentType) && acceptEncoding.includes('gzip')) {
+      zlib.gzip(data, function (err, compressed) {
+        if (err) {
+          res.writeHead(200, headers);
+          return res.end(data);
+        }
+        headers['Content-Encoding'] = 'gzip';
+        headers['Vary'] = 'Accept-Encoding';
+        res.writeHead(200, headers);
+        res.end(compressed);
+      });
+    } else {
+      res.writeHead(200, headers);
+      res.end(data);
+    }
   });
 }).listen(PORT, '127.0.0.1', () => {
   console.log(`Serving on http://127.0.0.1:${PORT}`);

@@ -17,7 +17,7 @@
   --accent-dim: #00ffc833;
   --accent-glow: #00ffc866;
   --text: #c9d1d9;
-  --text-dim: #6e7681;
+  --text-dim: #8b949e;
   --text-bright: #f0f6fc;
   --red: #ff5f56;
   --yellow: #ffbd2e;
@@ -64,6 +64,27 @@ a {
 }
 a:hover {
   opacity: 0.8;
+}
+
+/* --- Screen Reader Only --- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Focus Indicators --- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* --- Boot Screen --- */
@@ -298,6 +319,7 @@ nav a:hover::after {
   font-size: 18px;
   color: var(--text-dim);
   margin-bottom: 24px;
+  min-height: 1.6em;
 }
 
 .hero-status {
@@ -466,6 +488,7 @@ nav a:hover::after {
   overflow-x: auto;
   padding-bottom: 4px;
   max-width: 100%;
+  min-height: 108px;
 }
 
 .contrib-week {
@@ -897,7 +920,7 @@ footer {
 .footer-small {
   margin-top: 8px;
   font-size: 11px;
-  color: #333;
+  color: #666;
 }
 
 /* --- Matrix Canvas (Easter Egg) --- */
