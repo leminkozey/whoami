@@ -674,6 +674,56 @@ nav a:hover::after {
   margin-right: 8px;
 }
 
+/* --- Sound Toggle --- */
+.sound-toggle {
+  background: none;
+  border: 1px solid #1e1e1e;
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  transition: border-color 0.3s, color 0.3s;
+}
+
+.sound-toggle:hover {
+  border-color: var(--accent-dim);
+}
+
+.sound-toggle .sound-icon {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+}
+
+.sound-toggle .sound-off {
+  display: none;
+}
+
+.sound-toggle.muted {
+  color: var(--text-dim);
+}
+
+.sound-toggle.muted .sound-on {
+  display: none;
+}
+
+.sound-toggle.muted .sound-off {
+  display: block;
+}
+
+@keyframes pulse-sound {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+.sound-toggle:not(.muted):hover {
+  animation: pulse-sound 0.6s ease-in-out;
+}
+
 /* --- Terminal --- */
 .terminal-window {
   background: var(--bg-card);

@@ -550,7 +550,17 @@
 
   // ─── Typing Sound (Web Audio API) ─────────────────────────
   var audioCtx = null;
+  var soundMuted = false;
+  var soundToggle = document.getElementById('sound-toggle');
+  if (soundToggle) {
+    soundToggle.addEventListener('click', function () {
+      soundMuted = !soundMuted;
+      soundToggle.classList.toggle('muted', soundMuted);
+    });
+  }
+
   function playKeySound() {
+    if (soundMuted) return;
     if (!audioCtx) {
       try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
       catch (e) { return; }
