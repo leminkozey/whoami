@@ -298,39 +298,39 @@
 
     about: function () {
       return [
-        '┌──────────────────────────────────────────────┐',
-        '│  About Me                                     │',
-        '├──────────────────────────────────────────────┤',
-        '│                                               │',
-        '│  17y old IT trainee from Germany. I build      │',
-        '│  self-hosted tools, homelab dashboards, and    │',
-        '│  web apps that solve real problems. Currently  │',
-        '│  training as Fachinformatiker for application  │',
-        '│  development. Powered by curiosity and Docker. │',
-        '│                                               │',
-        '└──────────────────────────────────────────────┘',
+        '┌──────────────────────────────────────────────────┐',
+        '│  About Me                                        │',
+        '├─────────────────────────────────────────────────┤',
+        '│                                                  │',
+        '│  17y old IT trainee from Germany. I build        │',
+        '│  self-hosted tools, homelab dashboards, and      │',
+        '│  web apps that solve real problems. Currently    │',
+        '│  training as Fachinformatiker for application    │',
+        '│  development. Powered by curiosity and Docker.   │',
+        '│                                                  │',
+        '└──────────────────────────────────────────────────┘',
       ];
     },
 
     skills: function () {
       return [
-        '┌─ Languages ─────────────────────────────┐',
+        '┌─ Languages ──────────────────────────────┐',
         '│  JavaScript  ████████████████████░░ 90%  │',
         '│  TypeScript  █████████████████░░░░░ 85%  │',
         '│  HTML / CSS  ████████████████████░░ 90%  │',
-        '│  C# / .NET   ████████████░░░░░░░░░ 60%  │',
-        '│  Java        ███████████░░░░░░░░░░ 55%  │',
-        '├─ Frameworks ────────────────────────────┤',
+        '│  C# / .NET   ████████████░░░░░░░░░ 60%   │',
+        '│  Java        ███████████░░░░░░░░░░ 55%   │',
+        '├─ Frameworks ─────────────────────────────┤',
         '│  Node.js      ████████████████████░ 90%  │',
         '│  Next.js      █████████████████░░░░ 85%  │',
         '│  Tailwind CSS ████████████████░░░░░ 80%  │',
         '│  Prisma       ███████████████░░░░░░ 75%  │',
-        '├─ Tools ─────────────────────────────────┤',
+        '├─ Tools ──────────────────────────────────┤',
         '│  Docker       █████████████████░░░░ 85%  │',
         '│  Git          █████████████████░░░░ 85%  │',
         '│  Linux / RPi  ████████████████░░░░░ 80%  │',
         '│  SQLite       ███████████████░░░░░░ 75%  │',
-        '└─────────────────────────────────────────┘',
+        '└──────────────────────────────────────────┘',
       ];
     },
 
@@ -427,7 +427,7 @@
           '  ██║      ██╔════╝ ████╗ ████║ ██║ ████╗  ██║\n' +
           '  ██║      █████╗   ██╔████╔██║ ██║ ██╔██╗ ██║\n' +
           '  ██║      ██╔══╝   ██║╚██╔╝██║ ██║ ██║╚██╗██║\n' +
-          '  ███████╗  ███████╗ ██║ ╚═╝ ██║ ██║ ██║ ╚████║\n' +
+          '  ███████╗ ███████╗ ██║ ╚═╝ ██║ ██║ ██║ ╚████║\n' +
           '  ╚══════╝ ╚══════╝ ╚═╝     ╚═╝ ╚═╝ ╚═╝  ╚═══╝';
       } else {
         pre.textContent =
@@ -551,11 +551,11 @@
     neofetch: function () {
       return [
         '       ╭──────────╮',
-        '       │  ██████   │     <span class="cmd-highlight">leminkozey@portfolio</span>',
-        '       │  ██  ██   │     ─────────────────────',
-        '       │  ██████   │     OS: Web Browser',
-        '       │  ██  ██   │     Host: The Internet',
-        '       │  ██████   │     Kernel: HTML5',
+        '       │  ██████  │     <span class="cmd-highlight">leminkozey@portfolio</span>',
+        '       │  ██  ██  │     ─────────────────────',
+        '       │  ██████  │     OS: Web Browser',
+        '       │  ██  ██  │     Host: The Internet',
+        '       │  ██████  │     Kernel: HTML5',
         '       ╰──────────╯     Shell: JavaScript',
         '                         Theme: Terminal Dark',
         '                         Font: JetBrains Mono',
@@ -570,12 +570,12 @@
     coffee: function () {
       return [
         '',
-        '    ( (',
-        '     ) )',
-        '   ........',
-        '   |      |]',
-        '   \\      /',
-        '    `----\'',
+        '    ( (       ',
+        '     ) )      ',
+        '   ........   ',
+        '   |      |]  ',
+        '   \\      /  ',
+        '    `----\'   ',
         '',
         'Here\'s your coffee. Now get back to coding.',
       ];

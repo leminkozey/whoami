@@ -871,6 +871,7 @@ nav a:hover::after {
   min-height: 0;
   padding: var(--space-md);
   overflow-y: auto;
+  overflow-x: auto;
   font-size: 13px;
   line-height: 1.7;
 }
@@ -890,6 +891,7 @@ nav a:hover::after {
 #terminal-output .cmd-result {
   color: var(--text-dim);
   padding-left: var(--space-sm);
+  white-space: pre;
 }
 
 #terminal-output .cmd-error {
