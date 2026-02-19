@@ -5,6 +5,8 @@
 (function () {
   'use strict';
 
+  var pageLoadTime = Date.now();
+
   // ─── Boot Sequence ───────────────────────────────────────────
   const bootLines = [
     { text: 'BIOS v3.7.1 — POST check', status: 'ok' },
@@ -278,6 +280,7 @@
         '  <span class="cmd-highlight">date</span>        — current date/time',
         '  <span class="cmd-highlight">history</span>     — command history',
         '  <span class="cmd-highlight">banner</span>      — show ASCII art',
+        '  <span class="cmd-highlight">guestbook</span>   — sign or view the guestbook',
         '  <span class="cmd-highlight">help</span>        — show this message',
         '',
         '  ...try some creative commands too, like <span class="cmd-highlight">' +
@@ -595,6 +598,63 @@
         'Yep, I\'m alive!',
       ];
     },
+
+    uptime: function () {
+      var ms = Date.now() - pageLoadTime;
+      var secs = Math.floor(ms / 1000);
+      var mins = Math.floor(secs / 60);
+      var hrs = Math.floor(mins / 60);
+      var days = Math.floor(hrs / 24);
+      secs %= 60;
+      mins %= 60;
+      hrs %= 24;
+      var parts = [];
+      if (days > 0) parts.push(days + (days === 1 ? ' day' : ' days'));
+      if (hrs > 0) parts.push(hrs + (hrs === 1 ? ' hour' : ' hours'));
+      if (mins > 0) parts.push(mins + (mins === 1 ? ' min' : ' mins'));
+      parts.push(secs + (secs === 1 ? ' sec' : ' secs'));
+      var now = new Date();
+      var timeStr = now.toLocaleTimeString('en-US', { hour12: false });
+      return [
+        ' ' + timeStr + ' up ' + parts.join(', ') + ', 1 user, load average: 0.42, 0.17, 0.08',
+      ];
+    },
+
+    guestbook: function () { return null; }, // handled separately; listed here for autocomplete
+
+    'cat resume': function () {
+      return [
+        '',
+        '  ====================================',
+        '   LEMIN KOZEY — Resume',
+        '  ====================================',
+        '',
+        '  <span class="cmd-highlight">Role:</span>       Azubi Fachinformatiker',
+        '              Anwendungsentwicklung',
+        '  <span class="cmd-highlight">Location:</span>   Germany',
+        '  <span class="cmd-highlight">Website:</span>    leminkozey.me',
+        '',
+        '  --- Skills ---',
+        '  Languages:  JavaScript, TypeScript, HTML/CSS, C#, Java',
+        '  Frameworks: Node.js, Next.js, Tailwind CSS, Prisma',
+        '  Tools:      Docker, Git, Linux, SQLite, Raspberry Pi',
+        '',
+        '  --- Projects ---',
+        '  Lemin-kanban    Kanban board with MCP server + SSE',
+        '  Netzwerk-Mgr    Self-hosted network dashboard + 2FA',
+        '  OfflineWiki     Local Wikipedia archive with Kiwix',
+        '  whoami           This terminal portfolio',
+        '',
+        '  --- Education ---',
+        '  Ausbildung Fachinformatiker Anwendungsentwicklung',
+        '  + self-taught through building, breaking, and fixing',
+        '',
+        '  --- Contact ---',
+        '  Email:   contact@leminkozey.me',
+        '  GitHub:  github.com/leminkozey',
+        '',
+      ];
+    },
   };
 
   // ─── Typing Sound (Web Audio API) ─────────────────────────
@@ -708,18 +768,23 @@
         );
 
         // Process command
-        const handler = commands[cmd.toLowerCase()];
-        if (handler) {
-          const output = handler();
-          output.forEach(function (line) {
-            appendToTerminal('<span class="cmd-result">' + line + '</span>');
-          });
+        var cmdLower = cmd.toLowerCase();
+        if (cmdLower === 'guestbook' || cmdLower.startsWith('guestbook ')) {
+          handleGuestbook(cmd);
         } else {
-          appendToTerminal(
-            '<span class="cmd-error">command not found: ' +
-              escapeHTML(cmd) +
-              '. Type "help" for available commands.</span>'
-          );
+          const handler = commands[cmdLower];
+          if (handler) {
+            const output = handler();
+            output.forEach(function (line) {
+              appendToTerminal('<span class="cmd-result">' + line + '</span>');
+            });
+          } else {
+            appendToTerminal(
+              '<span class="cmd-error">command not found: ' +
+                escapeHTML(cmd) +
+                '. Type "help" for available commands.</span>'
+            );
+          }
         }
 
         appendToTerminal('&nbsp;');
@@ -772,6 +837,92 @@
     var div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+  }
+
+
+  // ─── Guestbook Command ────────────────────────────────────────
+  function handleGuestbook(cmd) {
+    var args = cmd.substring('guestbook'.length).trim();
+
+    if (!args) {
+      // Show entries + usage
+      fetch('/api/guestbook')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.error) {
+            appendToTerminal('<span class="cmd-error">' + escapeHTML(data.error) + '</span>');
+            return;
+          }
+          if (!data.entries || data.entries.length === 0) {
+            appendToTerminal('<span class="cmd-result">It looks pretty empty here.. Fill it with your creativity!</span>');
+          } else {
+            appendToTerminal('<span class="cmd-highlight">Guestbook (' + data.entries.length + (data.entries.length === 1 ? ' entry' : ' entries') + '):</span>');
+            appendToTerminal('&nbsp;');
+            data.entries.forEach(function (entry) {
+              appendToTerminal(
+                '<span class="cmd-result">  [' + escapeHTML(entry.date) + ']  ' +
+                '<span class="cmd-highlight">' + escapeHTML(entry.name) + '</span>: ' +
+                escapeHTML(entry.message) + '</span>'
+              );
+            });
+          }
+          appendToTerminal('&nbsp;');
+          appendToTerminal('<span class="cmd-result">Sign the guestbook:</span>');
+          appendToTerminal('<span class="cmd-result">  <span class="cmd-highlight">guestbook &lt;message&gt;</span>              — sign as Anonymous</span>');
+          appendToTerminal('<span class="cmd-result">  <span class="cmd-highlight">guestbook --name Name &lt;message&gt;</span>  — sign with your name</span>');
+          appendToTerminal('&nbsp;');
+          appendToTerminal('<span class="cmd-result">  Example: <span class="cmd-highlight">guestbook --name Max Cool site!</span></span>');
+        })
+        .catch(function () {
+          appendToTerminal('<span class="cmd-result">It looks pretty empty here.. Fill it with your creativity!</span>');
+          appendToTerminal('&nbsp;');
+          appendToTerminal('<span class="cmd-result">Sign the guestbook:</span>');
+          appendToTerminal('<span class="cmd-result">  <span class="cmd-highlight">guestbook &lt;message&gt;</span>              — sign as Anonymous</span>');
+          appendToTerminal('<span class="cmd-result">  <span class="cmd-highlight">guestbook --name Name &lt;message&gt;</span>  — sign with your name</span>');
+          appendToTerminal('&nbsp;');
+          appendToTerminal('<span class="cmd-result">  Example: <span class="cmd-highlight">guestbook --name Max Cool site!</span></span>');
+        });
+      return;
+    }
+
+    // Parse --name flag
+    var name = '';
+    var message = args;
+    var nameMatch = args.match(/^--name\s+(\S+)\s+([\s\S]+)$/);
+    if (nameMatch) {
+      name = nameMatch[1];
+      message = nameMatch[2];
+    }
+
+    if (message.length > 100) {
+      appendToTerminal('<span class="cmd-error">Message too long (max 100 chars)</span>');
+      return;
+    }
+
+    var body = { message: message };
+    if (name) body.name = name;
+
+    fetch('/api/guestbook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.error) {
+          appendToTerminal('<span class="cmd-error">' + escapeHTML(data.error) + '</span>');
+          return;
+        }
+        appendToTerminal('<span class="cmd-highlight">Guestbook signed!</span>');
+        appendToTerminal(
+          '<span class="cmd-result">  [' + escapeHTML(data.entry.date) + ']  ' +
+          '<span class="cmd-highlight">' + escapeHTML(data.entry.name) + '</span>: ' +
+          escapeHTML(data.entry.message) + '</span>'
+        );
+      })
+      .catch(function () {
+        appendToTerminal('<span class="cmd-error">Failed to sign guestbook.</span>');
+      });
   }
 
 

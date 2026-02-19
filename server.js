@@ -5,6 +5,7 @@ const zlib = require('zlib');
 
 const PORT = 8081;
 const COUNTER_FILE = path.join(__dirname, 'visitors.json');
+const GUESTBOOK_FILE = path.join(__dirname, 'guestbook.json');
 const PROJECT_ROOT = path.resolve(__dirname) + path.sep;
 
 // Allowed directories and files for static serving
@@ -52,6 +53,57 @@ let visitorCount = (function () {
     return 0;
   }
 })();
+
+// ─── Guestbook ────────────────────────────────────────────
+let guestbookEntries = (function () {
+  try {
+    return JSON.parse(fs.readFileSync(GUESTBOOK_FILE, 'utf8')).entries || [];
+  } catch {
+    return [];
+  }
+})();
+
+function writeGuestbook(entries) {
+  const tmp = GUESTBOOK_FILE + '.tmp';
+  fs.writeFile(tmp, JSON.stringify({ entries }), (err) => {
+    if (err) return console.error('Guestbook write failed:', err);
+    fs.rename(tmp, GUESTBOOK_FILE, (err) => {
+      if (err) console.error('Guestbook rename failed:', err);
+    });
+  });
+}
+
+function stripHTML(str) {
+  return str.replace(/<[^>]*>/g, '').trim();
+}
+
+function getClientIP(req) {
+  var forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return req.socket.remoteAddress || '';
+}
+
+// ─── Rate Limiter ─────────────────────────────────────────
+const rateLimitMap = new Map();
+
+function isRateLimited(ip) {
+  var now = Date.now();
+  var entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + 60000 });
+    return false;
+  }
+  entry.count++;
+  return entry.count > 5;
+}
+
+// Cleanup expired entries every 5 minutes
+setInterval(function () {
+  var now = Date.now();
+  for (var [ip, entry] of rateLimitMap) {
+    if (now > entry.resetTime) rateLimitMap.delete(ip);
+  }
+}, 300000);
 
 function writeCounter(count) {
   const tmp = COUNTER_FILE + '.tmp';
@@ -107,6 +159,92 @@ const server = http.createServer((req, res) => {
     // No gzip on API responses (BREACH mitigation)
     res.writeHead(200, headers);
     return res.end(JSON.stringify({ count: visitorCount }));
+  }
+
+  // ─── Guestbook API ───────────────────────────────────────
+  if (pathname === '/api/guestbook') {
+    var ip = getClientIP(req);
+    var apiHeaders = Object.assign({
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache',
+    }, SECURITY_HEADERS);
+
+    if (isRateLimited(ip)) {
+      res.writeHead(429, apiHeaders);
+      return res.end(JSON.stringify({ error: 'Too many requests, slow down' }));
+    }
+
+    if (req.method === 'GET') {
+      // Return entries without IP addresses, newest first, max 50
+      var publicEntries = guestbookEntries
+        .slice()
+        .reverse()
+        .slice(0, 50)
+        .map(function (e) { return { name: e.name, message: e.message, date: e.date }; });
+      res.writeHead(200, apiHeaders);
+      return res.end(JSON.stringify({ entries: publicEntries }));
+    }
+
+    if (req.method === 'POST') {
+      var body = '';
+      req.on('data', function (chunk) {
+        body += chunk;
+        if (body.length > 1024) {
+          req.destroy();
+        }
+      });
+      req.on('end', function () {
+        var data;
+        try {
+          data = JSON.parse(body);
+        } catch {
+          res.writeHead(400, apiHeaders);
+          return res.end(JSON.stringify({ error: 'Invalid JSON' }));
+        }
+
+        // Validate message
+        var message = typeof data.message === 'string' ? stripHTML(data.message).trim() : '';
+        if (!message || message.length < 1) {
+          res.writeHead(400, apiHeaders);
+          return res.end(JSON.stringify({ error: 'Message is required' }));
+        }
+        if (message.length > 100) {
+          res.writeHead(400, apiHeaders);
+          return res.end(JSON.stringify({ error: 'Message too long (max 100 chars)' }));
+        }
+
+        // Validate name
+        var name = typeof data.name === 'string' ? stripHTML(data.name).trim() : '';
+        if (!name) name = 'Anonymous';
+        if (name.length > 20) name = name.substring(0, 20);
+
+        // IP duplicate check
+        var alreadySigned = guestbookEntries.some(function (e) { return e.ip === ip; });
+        if (alreadySigned) {
+          res.writeHead(409, apiHeaders);
+          return res.end(JSON.stringify({ error: 'You already signed the guestbook!' }));
+        }
+
+        var entry = {
+          name: name,
+          message: message,
+          date: new Date().toISOString().split('T')[0],
+          ip: ip,
+        };
+        guestbookEntries.push(entry);
+        writeGuestbook(guestbookEntries);
+
+        res.writeHead(201, apiHeaders);
+        return res.end(JSON.stringify({
+          success: true,
+          entry: { name: entry.name, message: entry.message, date: entry.date },
+        }));
+      });
+      return;
+    }
+
+    res.writeHead(405, apiHeaders);
+    return res.end(JSON.stringify({ error: 'Method not allowed' }));
   }
 
   if (pathname === '/') pathname = '/index.html';
