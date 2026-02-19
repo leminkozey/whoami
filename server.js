@@ -73,13 +73,23 @@ function writeGuestbook(entries) {
   });
 }
 
-function stripHTML(str) {
-  return str.replace(/<[^>]*>/g, '').trim();
+function sanitizeText(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .trim();
 }
 
+var MAX_GUESTBOOK_ENTRIES = 500;
+
 function getClientIP(req) {
-  var forwarded = req.headers['x-forwarded-for'];
-  if (forwarded) return forwarded.split(',')[0].trim();
+  // CF-Connecting-IP is set by Cloudflare and cannot be spoofed by the client
+  var cfIP = req.headers['cf-connecting-ip'];
+  if (cfIP) return cfIP.trim();
+  // Fallback for direct connections (development)
   return req.socket.remoteAddress || '';
 }
 
@@ -169,11 +179,6 @@ const server = http.createServer((req, res) => {
       'Cache-Control': 'no-cache',
     }, SECURITY_HEADERS);
 
-    if (isRateLimited(ip)) {
-      res.writeHead(429, apiHeaders);
-      return res.end(JSON.stringify({ error: 'Too many requests, slow down' }));
-    }
-
     if (req.method === 'GET') {
       // Return entries without IP addresses, newest first, max 50
       var publicEntries = guestbookEntries
@@ -186,14 +191,25 @@ const server = http.createServer((req, res) => {
     }
 
     if (req.method === 'POST') {
+      if (isRateLimited(ip)) {
+        res.writeHead(429, apiHeaders);
+        return res.end(JSON.stringify({ error: 'Too many requests, slow down' }));
+      }
+
       var body = '';
+      var aborted = false;
       req.on('data', function (chunk) {
         body += chunk;
         if (body.length > 1024) {
+          aborted = true;
+          res.writeHead(413, apiHeaders);
+          res.end(JSON.stringify({ error: 'Payload too large' }));
           req.destroy();
         }
       });
       req.on('end', function () {
+        if (aborted) return;
+
         var data;
         try {
           data = JSON.parse(body);
@@ -203,7 +219,7 @@ const server = http.createServer((req, res) => {
         }
 
         // Validate message
-        var message = typeof data.message === 'string' ? stripHTML(data.message).trim() : '';
+        var message = typeof data.message === 'string' ? sanitizeText(data.message) : '';
         if (!message || message.length < 1) {
           res.writeHead(400, apiHeaders);
           return res.end(JSON.stringify({ error: 'Message is required' }));
@@ -214,7 +230,7 @@ const server = http.createServer((req, res) => {
         }
 
         // Validate name
-        var name = typeof data.name === 'string' ? stripHTML(data.name).trim() : '';
+        var name = typeof data.name === 'string' ? sanitizeText(data.name) : '';
         if (!name) name = 'Anonymous';
         if (name.length > 20) name = name.substring(0, 20);
 
@@ -223,6 +239,12 @@ const server = http.createServer((req, res) => {
         if (alreadySigned) {
           res.writeHead(409, apiHeaders);
           return res.end(JSON.stringify({ error: 'You already signed the guestbook!' }));
+        }
+
+        // Entry cap
+        if (guestbookEntries.length >= MAX_GUESTBOOK_ENTRIES) {
+          res.writeHead(409, apiHeaders);
+          return res.end(JSON.stringify({ error: 'Guestbook is full' }));
         }
 
         var entry = {

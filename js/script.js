@@ -620,7 +620,7 @@
       ];
     },
 
-    guestbook: function () { return null; }, // handled separately; listed here for autocomplete
+    guestbook: function () { return []; }, // handled separately; listed here for autocomplete
 
     'cat resume': function () {
       return [

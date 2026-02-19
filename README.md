@@ -26,6 +26,7 @@
 | **Typing Sound** | Mechanical keyboard click sound via Web Audio API (with mute toggle) |
 | **GitHub Contributions** | Live contribution graph fetched from GitHub API |
 | **Visitor Counter** | Cookie-based unique visitor count displayed in the header |
+| **Guestbook** | Leave a message via terminal command, 1 entry per IP, rate-limited |
 | **Easter Eggs** | Konami code, `sudo rm -rf /`, `matrix`, `winget moo`, 5x logo click, and more |
 | **Scroll Animations** | Sections fade in as you scroll |
 | **Responsive** | Works on mobile, tablet, and desktop |
@@ -40,14 +41,14 @@ Three.js ────── 3D wireframe hero (via CDN)
 Web Audio API ── typing sound effects
 ```
 
-Zero dependencies. Zero build steps. Open `index.html` and go.
+Zero dependencies. Zero build steps. Run `npm run dev` and go.
 
 ## Quick Start
 
 ```bash
 git clone https://github.com/leminkozey/whoami.git
 cd whoami
-open index.html
+npm run dev
 ```
 
 ## Terminal Commands
@@ -62,6 +63,7 @@ experience   — work & training
 education    — where I'm learning
 banner       — ASCII art
 neofetch     — system info
+guestbook    — sign or view the guestbook
 clear        — clear terminal
 ```
 
@@ -86,7 +88,7 @@ whoami/
 ├── js/
 │   └── script.js    # boot, terminal, 3D, easter eggs
 ├── assets/          # favicon, og-image, icons
-├── server.js        # static file server + visitor counter API
+├── server.js        # static file server + visitor counter + guestbook API
 └── README.md        # you are here
 ```
 
