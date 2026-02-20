@@ -217,6 +217,9 @@ input:focus-visible {
   display: none !important;
 }
 
+/* #main-site uses a different .hidden behavior: it stays in the DOM (display:block)
+   but is invisible (opacity:0) so the boot-to-site fade transition works smoothly.
+   Removing .hidden triggers the opacity transition defined on #main-site below. */
 #main-site.hidden {
   display: block !important;
   opacity: 0 !important;
@@ -334,26 +337,6 @@ nav a:hover::after {
   inset: 0;
   z-index: 0;
   opacity: 0.4;
-}
-
-.three-loader {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.loader-ring {
-  width: 48px;
-  height: 48px;
-  border: 2px solid var(--accent-dim);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }
 
 #hero-content {
