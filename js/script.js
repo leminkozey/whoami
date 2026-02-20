@@ -1214,6 +1214,20 @@
     });
   }
 
+  // ─── Glitch Mouse Tracking ─────────────────────────────────
+  var glitchEl = document.querySelector('.glitch');
+  if (glitchEl) {
+    document.addEventListener('mousemove', function (e) {
+      var rect = glitchEl.getBoundingClientRect();
+      var cx = rect.left + rect.width / 2;
+      var cy = rect.top + rect.height / 2;
+      var dx = (e.clientX - cx) / window.innerWidth;
+      var dy = (e.clientY - cy) / window.innerHeight;
+      glitchEl.style.setProperty('--gx', (dx * 12) + 'px');
+      glitchEl.style.setProperty('--gy', (dy * 8) + 'px');
+    });
+  }
+
   // ─── Smooth scroll for nav links ────────────────────────────
   document.querySelectorAll('nav a[href^="#"]').forEach(function (link) {
     link.addEventListener('click', function (e) {
