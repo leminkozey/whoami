@@ -5,7 +5,20 @@
 (function () {
   'use strict';
 
-  var pageLoadTime = Date.now();
+  // ─── Constants ─────────────────────────────────────────────
+  const BOOT_LINE_INTERVAL_MS = 180;
+  const BOOT_FADE_DELAY_MS = 600;
+  const MATRIX_DURATION_MS = 5000;
+  const MATRIX_FRAME_MS = 40;
+  const LOGO_CLICK_THRESHOLD = 5;
+  const LOGO_CLICK_RESET_MS = 2000;
+  const RESIZE_DEBOUNCE_MS = 150;
+  const SKILL_BAR_DELAY_MS = 200;
+  const ATTRACT_RADIUS = 1.8;
+  const ATTRACT_STRENGTH = 0.6;
+  const SNAP_BACK_FACTOR = 0.1;
+
+  const pageLoadTime = Date.now();
 
   // ─── Boot Sequence ───────────────────────────────────────────
   const bootLines = [
@@ -28,6 +41,7 @@
   const mainSite = document.getElementById('main-site');
 
   document.body.style.overflow = 'hidden';
+
   function runBoot() {
     let i = 0;
     let skipped = false;
@@ -38,7 +52,7 @@
         skipped = true;
         document.removeEventListener('keydown', skipBoot);
         document.removeEventListener('click', skipBoot);
-        setTimeout(finishBoot, 600);
+        setTimeout(finishBoot, BOOT_FADE_DELAY_MS);
         return;
       }
       const line = bootLines[i];
@@ -49,7 +63,7 @@
       bootLog.appendChild(el);
       bootLog.scrollTop = bootLog.scrollHeight;
       i++;
-    }, 180);
+    }, BOOT_LINE_INTERVAL_MS);
 
     function skipBoot() {
       if (skipped) return;
@@ -68,13 +82,12 @@
     mainSite.classList.remove('hidden');
     document.body.style.overflow = '';
 
-    // Random hero tagline
-    var taglines = [
+    const taglines = [
       'i build tools, break things & fix them \u2014 17y, germany',
       'building things that actually work \u2014 17y, germany',
       'turning ideas into deployments \u2014 17y, germany',
     ];
-    var taglineEl = document.getElementById('hero-tagline');
+    const taglineEl = document.getElementById('hero-tagline');
     if (taglineEl) taglineEl.textContent = taglines[Math.floor(Math.random() * taglines.length)];
 
     setTimeout(() => {
@@ -82,19 +95,15 @@
       initRevealAnimations();
       initContributions();
       initVisitorCount();
-
-      // Three.js already initialized during boot
-      // animateSkillBars() is triggered by IntersectionObserver when skills section is visible
-    }, 600);
+    }, BOOT_FADE_DELAY_MS);
   }
 
   // Load Three.js immediately so the globe renders during boot
-  var threeScript = document.createElement('script');
+  const threeScript = document.createElement('script');
   threeScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
   threeScript.onload = function () { initThreeJS(); };
   document.head.appendChild(threeScript);
 
-  // Start boot on load
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', runBoot);
   } else {
@@ -122,7 +131,6 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
 
-    // Wireframe icosahedron
     const geo1 = new THREE.IcosahedronGeometry(1.4, 1);
     const mat1 = new THREE.MeshBasicMaterial({
       color: 0x00ffc8,
@@ -133,10 +141,8 @@
     const mesh1 = new THREE.Mesh(geo1, mat1);
     scene.add(mesh1);
 
-    // Store original vertex positions for attraction effect
-    var origPos1 = new Float32Array(geo1.attributes.position.array);
+    const origPos1 = new Float32Array(geo1.attributes.position.array);
 
-    // Inner sphere
     const geo2 = new THREE.IcosahedronGeometry(0.9, 2);
     const mat2 = new THREE.MeshBasicMaterial({
       color: 0x00e5ff,
@@ -147,9 +153,8 @@
     const mesh2 = new THREE.Mesh(geo2, mat2);
     scene.add(mesh2);
 
-    var origPos2 = new Float32Array(geo2.attributes.position.array);
+    const origPos2 = new Float32Array(geo2.attributes.position.array);
 
-    // Particles
     const particleCount = 500;
     const positions = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount; i++) {
@@ -168,73 +173,64 @@
     const particles = new THREE.Points(particleGeo, particleMat);
     scene.add(particles);
 
-    // Mouse tracking
     let mouseX = 0;
     let mouseY = 0;
-    var mouse3D = new THREE.Vector3(0, 0, 0);
-    var raycaster = new THREE.Raycaster();
-    var mouseNDC = new THREE.Vector2(0, 0);
+    const mouse3D = new THREE.Vector3(0, 0, 0);
+    const raycaster = new THREE.Raycaster();
+    const mouseNDC = new THREE.Vector2(0, 0);
 
     document.addEventListener('mousemove', function (e) {
       mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
       mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
 
-      // Convert mouse to NDC for raycasting
-      var rect = container.getBoundingClientRect();
+      const rect = container.getBoundingClientRect();
       mouseNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouseNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     });
 
-    // Attraction settings
-    var attractRadius = 1.8;
-    var attractStrength = 0.6;
-
     // Pre-allocated objects to avoid GC pressure in animation loop
-    var _plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-    var _mouseWorld = new THREE.Vector3();
-    var _localMouse = new THREE.Vector3();
+    const _plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+    const _mouseWorld = new THREE.Vector3();
+    const _localMouse = new THREE.Vector3();
 
     function deformMesh(mesh, origPositions) {
-      // Project mouse into 3D at z=0 plane
       raycaster.setFromCamera(mouseNDC, camera);
-      var result = raycaster.ray.intersectPlane(_plane, _mouseWorld);
+      const result = raycaster.ray.intersectPlane(_plane, _mouseWorld);
       if (!result) return;
 
-      // Transform mouse position into mesh local space
       _localMouse.copy(_mouseWorld);
       mesh.worldToLocal(_localMouse);
 
-      var posAttr = mesh.geometry.attributes.position;
-      var arr = posAttr.array;
+      const posAttr = mesh.geometry.attributes.position;
+      const arr = posAttr.array;
 
-      for (var i = 0; i < posAttr.count; i++) {
-        var ox = origPositions[i * 3];
-        var oy = origPositions[i * 3 + 1];
-        var oz = origPositions[i * 3 + 2];
+      for (let i = 0; i < posAttr.count; i++) {
+        const ox = origPositions[i * 3];
+        const oy = origPositions[i * 3 + 1];
+        const oz = origPositions[i * 3 + 2];
 
-        var dx = _localMouse.x - ox;
-        var dy = _localMouse.y - oy;
-        var dz = _localMouse.z - oz;
-        var dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        const dx = _localMouse.x - ox;
+        const dy = _localMouse.y - oy;
+        const dz = _localMouse.z - oz;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-        if (dist < attractRadius && dist > 0.01) {
-          var force = (1 - dist / attractRadius) * attractStrength;
+        if (dist < ATTRACT_RADIUS && dist > 0.01) {
+          const force = (1 - dist / ATTRACT_RADIUS) * ATTRACT_STRENGTH;
           arr[i * 3] = ox + dx * force;
           arr[i * 3 + 1] = oy + dy * force;
           arr[i * 3 + 2] = oz + dz * force;
         } else {
-          // Smooth snap-back
-          arr[i * 3] += (ox - arr[i * 3]) * 0.1;
-          arr[i * 3 + 1] += (oy - arr[i * 3 + 1]) * 0.1;
-          arr[i * 3 + 2] += (oz - arr[i * 3 + 2]) * 0.1;
+          arr[i * 3] += (ox - arr[i * 3]) * SNAP_BACK_FACTOR;
+          arr[i * 3 + 1] += (oy - arr[i * 3 + 1]) * SNAP_BACK_FACTOR;
+          arr[i * 3 + 2] += (oz - arr[i * 3 + 2]) * SNAP_BACK_FACTOR;
         }
       }
       posAttr.needsUpdate = true;
     }
 
-    // Animation loop (pauses when tab is hidden)
-    var animating = true;
-    var animFrameId = null;
+    let animating = true;
+    let animFrameId = null;
+
     function animate() {
       if (!animating) { animFrameId = null; return; }
       animFrameId = requestAnimationFrame(animate);
@@ -248,11 +244,9 @@
 
       particles.rotation.y = time * 0.02;
 
-      // Vertex attraction toward mouse
       deformMesh(mesh1, origPos1);
       deformMesh(mesh2, origPos2);
 
-      // Subtle parallax
       camera.position.x += (mouseX * 0.3 - camera.position.x) * 0.02;
       camera.position.y += (-mouseY * 0.3 - camera.position.y) * 0.02;
       camera.lookAt(scene.position);
@@ -273,15 +267,14 @@
       }
     });
 
-    // Resize (debounced)
-    var resizeTimer;
+    let resizeTimer;
     window.addEventListener('resize', function () {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function () {
         camera.aspect = container.clientWidth / container.clientHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(container.clientWidth, container.clientHeight);
-      }, 150);
+      }, RESIZE_DEBOUNCE_MS);
     });
   }
 
@@ -294,7 +287,6 @@
         entries.forEach(function (entry) {
           if (entry.isIntersecting) {
             entry.target.classList.add('revealed');
-            // Animate skill bars when skills section is revealed
             if (entry.target.id === 'skills') {
               animateSkillBars();
             }
@@ -317,7 +309,7 @@
       const level = fill.getAttribute('data-level');
       setTimeout(function () {
         fill.style.width = level + '%';
-      }, 200);
+      }, SKILL_BAR_DELAY_MS);
     });
   }
 
@@ -486,9 +478,9 @@
     },
 
     banner: function () {
-      var pre = document.createElement('pre');
+      const pre = document.createElement('pre');
       pre.className = 'banner-art';
-      var isWin = navigator.platform.indexOf('Win') > -1;
+      const isWin = navigator.platform.indexOf('Win') > -1;
       if (isWin) {
         pre.textContent =
           '  ██╗      ███████╗ ███╗   ███╗ ██╗ ███╗   ██╗\n' +
@@ -589,7 +581,7 @@
     },
 
     'winget moo': function () {
-      var cow = document.createElement('pre');
+      const cow = document.createElement('pre');
       cow.className = 'banner-art';
       cow.textContent =
         '         (__)\n' +
@@ -665,27 +657,27 @@
     },
 
     uptime: function () {
-      var ms = Date.now() - pageLoadTime;
-      var secs = Math.floor(ms / 1000);
-      var mins = Math.floor(secs / 60);
-      var hrs = Math.floor(mins / 60);
-      var days = Math.floor(hrs / 24);
+      const ms = Date.now() - pageLoadTime;
+      let secs = Math.floor(ms / 1000);
+      let mins = Math.floor(secs / 60);
+      let hrs = Math.floor(mins / 60);
+      const days = Math.floor(hrs / 24);
       secs %= 60;
       mins %= 60;
       hrs %= 24;
-      var parts = [];
+      const parts = [];
       if (days > 0) parts.push(days + (days === 1 ? ' day' : ' days'));
       if (hrs > 0) parts.push(hrs + (hrs === 1 ? ' hour' : ' hours'));
       if (mins > 0) parts.push(mins + (mins === 1 ? ' min' : ' mins'));
       parts.push(secs + (secs === 1 ? ' sec' : ' secs'));
-      var now = new Date();
-      var timeStr = now.toLocaleTimeString('en-US', { hour12: false });
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
       return [
         ' ' + timeStr + ' up ' + parts.join(', ') + ', 1 user, load average: 0.42, 0.17, 0.08',
       ];
     },
 
-    guestbook: function () { return []; }, // handled separately; listed here for autocomplete
+    guestbook: function () { return []; },
 
     'cat resume': function () {
       return [
@@ -722,10 +714,12 @@
     },
   };
 
+
   // ─── Typing Sound (Web Audio API) ─────────────────────────
-  var audioCtx = null;
-  var soundMuted = false;
-  var soundToggle = document.getElementById('sound-toggle');
+  let audioCtx = null;
+  let soundMuted = false;
+  const soundToggle = document.getElementById('sound-toggle');
+
   if (soundToggle) {
     soundToggle.addEventListener('click', function () {
       soundMuted = !soundMuted;
@@ -743,27 +737,25 @@
     if (audioCtx.state === 'suspended') {
       audioCtx.resume();
     }
-    var t = audioCtx.currentTime;
-    var duration = 0.012 + Math.random() * 0.008;
+    const t = audioCtx.currentTime;
+    const duration = 0.012 + Math.random() * 0.008;
 
-    // Short noise burst = mechanical click
-    var bufferSize = Math.ceil(audioCtx.sampleRate * duration);
-    var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    var data = buffer.getChannelData(0);
-    for (var i = 0; i < bufferSize; i++) {
+    const bufferSize = Math.ceil(audioCtx.sampleRate * duration);
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
       data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
     }
 
-    var noise = audioCtx.createBufferSource();
+    const noise = audioCtx.createBufferSource();
     noise.buffer = buffer;
 
-    // Bandpass filter for clicky tone
-    var filter = audioCtx.createBiquadFilter();
+    const filter = audioCtx.createBiquadFilter();
     filter.type = 'bandpass';
     filter.frequency.value = 1800 + Math.random() * 600;
     filter.Q.value = 2;
 
-    var gain = audioCtx.createGain();
+    const gain = audioCtx.createGain();
     gain.gain.setValueAtTime(0.2, t);
     gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
 
@@ -774,17 +766,18 @@
     noise.stop(t + duration);
   }
 
-  // Ghost autocomplete helper
-  var ghostEl = document.getElementById('terminal-ghost');
-  var currentSuggestion = '';
+
+  // ─── Ghost Autocomplete ─────────────────────────────────────
+  const ghostEl = document.getElementById('terminal-ghost');
+  let currentSuggestion = '';
 
   function updateGhost() {
-    var input = terminalInput.value.toLowerCase();
+    const input = terminalInput.value.toLowerCase();
     currentSuggestion = '';
     if (ghostEl) ghostEl.textContent = '';
     if (input.length < 2) return;
-    var allCmds = Object.keys(commands);
-    for (var i = 0; i < allCmds.length; i++) {
+    const allCmds = Object.keys(commands);
+    for (let i = 0; i < allCmds.length; i++) {
       if (allCmds[i].indexOf(input) === 0 && allCmds[i] !== input) {
         currentSuggestion = allCmds[i];
         if (ghostEl) ghostEl.textContent = currentSuggestion;
@@ -793,30 +786,30 @@
     }
   }
 
-  // Process terminal input
+  function clearGhost() {
+    currentSuggestion = '';
+    if (ghostEl) ghostEl.textContent = '';
+  }
+
+
+  // ─── Terminal Input Handling ─────────────────────────────────
   if (terminalInput) {
-    terminalInput.addEventListener('input', function () {
-      updateGhost();
-    });
+    terminalInput.addEventListener('input', updateGhost);
 
     terminalInput.addEventListener('keydown', function (e) {
       if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown' && e.key !== 'Tab') playKeySound();
 
-      // Tab / Enter autocomplete ghost suggestion
       if (e.key === 'Tab') {
         e.preventDefault();
         if (currentSuggestion) {
           terminalInput.value = currentSuggestion;
-          currentSuggestion = '';
-          if (ghostEl) ghostEl.textContent = '';
+          clearGhost();
         }
         return;
       }
 
       if (e.key === 'Enter') {
-        // Clear ghost on Enter
-        currentSuggestion = '';
-        if (ghostEl) ghostEl.textContent = '';
+        clearGhost();
 
         const cmd = terminalInput.value.trim();
         if (!cmd) return;
@@ -824,15 +817,13 @@
         commandHistory.push(cmd);
         historyIndex = commandHistory.length;
 
-        // Show input
         appendToTerminal(
           '<span class="cmd-prefix">visitor@whoami:~$</span> <span class="cmd-input">' +
             escapeHTML(cmd) +
             '</span>'
         );
 
-        // Process command
-        var cmdLower = cmd.toLowerCase();
+        const cmdLower = cmd.toLowerCase();
         if (cmdLower === 'guestbook' || cmdLower.startsWith('guestbook ')) {
           handleGuestbook(cmd);
         } else {
@@ -853,20 +844,18 @@
 
         appendToTerminal('&nbsp;');
         terminalInput.value = '';
-        currentSuggestion = '';
-        if (ghostEl) ghostEl.textContent = '';
+        clearGhost();
       }
 
-      // Command history navigation
       if (e.key === 'ArrowUp') {
         e.preventDefault();
         if (historyIndex > 0) {
           historyIndex--;
           terminalInput.value = commandHistory[historyIndex];
         }
-        currentSuggestion = '';
-        if (ghostEl) ghostEl.textContent = '';
+        clearGhost();
       }
+
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         if (historyIndex < commandHistory.length - 1) {
@@ -876,13 +865,11 @@
           historyIndex = commandHistory.length;
           terminalInput.value = '';
         }
-        currentSuggestion = '';
-        if (ghostEl) ghostEl.textContent = '';
+        clearGhost();
       }
     });
 
-    // Focus terminal input when clicking on terminal window
-    var termWindow = document.querySelector('.terminal-window');
+    const termWindow = document.querySelector('.terminal-window');
     if (termWindow) {
       termWindow.addEventListener('click', function () {
         terminalInput.focus();
@@ -891,14 +878,14 @@
   }
 
   function appendToTerminal(html) {
-    var p = document.createElement('p');
+    const p = document.createElement('p');
     p.innerHTML = html;
     terminalOutput.appendChild(p);
     terminalOutput.scrollTop = terminalOutput.scrollHeight;
   }
 
   function escapeHTML(str) {
-    var div = document.createElement('div');
+    const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
   }
@@ -906,10 +893,9 @@
 
   // ─── Guestbook Command ────────────────────────────────────────
   function handleGuestbook(cmd) {
-    var args = cmd.substring('guestbook'.length).trim();
+    const args = cmd.substring('guestbook'.length).trim();
 
     if (!args) {
-      // Show entries + usage
       fetch('/api/guestbook')
         .then(function (r) { return r.json(); })
         .then(function (data) {
@@ -931,28 +917,19 @@
             });
           }
           appendToTerminal('&nbsp;');
-          appendToTerminal('<span class="cmd-result">Sign the guestbook:</span>');
-          appendToTerminal('<span class="cmd-result">  <span class="cmd-highlight">guestbook &lt;message&gt;</span>              — sign as Anonymous</span>');
-          appendToTerminal('<span class="cmd-result">  <span class="cmd-highlight">guestbook --name Name &lt;message&gt;</span>  — sign with your name</span>');
-          appendToTerminal('&nbsp;');
-          appendToTerminal('<span class="cmd-result">  Example: <span class="cmd-highlight">guestbook --name Max Cool site!</span></span>');
+          appendGuestbookUsage();
         })
         .catch(function () {
           appendToTerminal('<span class="cmd-result">It looks pretty empty here.. Fill it with your creativity!</span>');
           appendToTerminal('&nbsp;');
-          appendToTerminal('<span class="cmd-result">Sign the guestbook:</span>');
-          appendToTerminal('<span class="cmd-result">  <span class="cmd-highlight">guestbook &lt;message&gt;</span>              — sign as Anonymous</span>');
-          appendToTerminal('<span class="cmd-result">  <span class="cmd-highlight">guestbook --name Name &lt;message&gt;</span>  — sign with your name</span>');
-          appendToTerminal('&nbsp;');
-          appendToTerminal('<span class="cmd-result">  Example: <span class="cmd-highlight">guestbook --name Max Cool site!</span></span>');
+          appendGuestbookUsage();
         });
       return;
     }
 
-    // Parse --name flag
-    var name = '';
-    var message = args;
-    var nameMatch = args.match(/^--name\s+(\S+)\s+([\s\S]+)$/);
+    let name = '';
+    let message = args;
+    const nameMatch = args.match(/^--name\s+(\S+)\s+([\s\S]+)$/);
     if (nameMatch) {
       name = nameMatch[1];
       message = nameMatch[2];
@@ -963,7 +940,7 @@
       return;
     }
 
-    var body = { message: message };
+    const body = { message: message };
     if (name) body.name = name;
 
     fetch('/api/guestbook', {
@@ -989,17 +966,24 @@
       });
   }
 
+  function appendGuestbookUsage() {
+    appendToTerminal('<span class="cmd-result">Sign the guestbook:</span>');
+    appendToTerminal('<span class="cmd-result">  <span class="cmd-highlight">guestbook &lt;message&gt;</span>              — sign as Anonymous</span>');
+    appendToTerminal('<span class="cmd-result">  <span class="cmd-highlight">guestbook --name Name &lt;message&gt;</span>  — sign with your name</span>');
+    appendToTerminal('&nbsp;');
+    appendToTerminal('<span class="cmd-result">  Example: <span class="cmd-highlight">guestbook --name Max Cool site!</span></span>');
+  }
+
 
   // ─── Easter Egg: Konami Code ─────────────────────────────────
-  var konamiSequence = [
+  const konamiSequence = [
     'ArrowUp', 'ArrowUp',
     'ArrowDown', 'ArrowDown',
     'ArrowLeft', 'ArrowRight',
   ];
-  var konamiIndex = 0;
+  let konamiIndex = 0;
 
   document.addEventListener('keydown', function (e) {
-    // Don't trigger konami code when typing in terminal (arrow keys = history navigation)
     if (e.target === terminalInput) return;
 
     if (e.key === konamiSequence[konamiIndex]) {
@@ -1015,7 +999,6 @@
 
   function triggerKonamiEasterEgg() {
     triggerMatrixRain();
-    // Also add a fun message to terminal
     if (terminalOutput) {
       appendToTerminal('&nbsp;');
       appendToTerminal(
@@ -1033,37 +1016,37 @@
 
 
   // ─── Easter Egg: Matrix Rain ─────────────────────────────────
-  var matrixRunning = false;
+  let matrixRunning = false;
 
   function triggerMatrixRain() {
     if (matrixRunning) return;
     matrixRunning = true;
-    var canvas = document.getElementById('matrix-canvas');
+    const canvas = document.getElementById('matrix-canvas');
     if (!canvas) { matrixRunning = false; return; }
 
     canvas.classList.add('active');
-    var ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    var fontSize = 14;
-    var columns = Math.floor(canvas.width / fontSize);
-    var drops = [];
-    for (var i = 0; i < columns; i++) {
+    const fontSize = 14;
+    const columns = Math.floor(canvas.width / fontSize);
+    const drops = [];
+    for (let i = 0; i < columns; i++) {
       drops[i] = Math.floor(Math.random() * -50);
     }
 
-    var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈｽﾀﾇﾍ';
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈｽﾀﾇﾍ';
 
-    var matrixInterval = setInterval(function () {
+    const matrixInterval = setInterval(function () {
       ctx.fillStyle = 'rgba(10, 10, 10, 0.05)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.fillStyle = '#00ffc8';
       ctx.font = fontSize + 'px monospace';
 
-      for (var col = 0; col < drops.length; col++) {
-        var text = chars.charAt(Math.floor(Math.random() * chars.length));
+      for (let col = 0; col < drops.length; col++) {
+        const text = chars.charAt(Math.floor(Math.random() * chars.length));
         ctx.fillText(text, col * fontSize, drops[col] * fontSize);
 
         if (drops[col] * fontSize > canvas.height && Math.random() > 0.975) {
@@ -1071,22 +1054,21 @@
         }
         drops[col]++;
       }
-    }, 40);
+    }, MATRIX_FRAME_MS);
 
-    // Stop after 5 seconds
     setTimeout(function () {
       clearInterval(matrixInterval);
       canvas.classList.remove('active');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       matrixRunning = false;
-    }, 5000);
+    }, MATRIX_DURATION_MS);
   }
 
 
   // ─── Easter Egg: Logo Click (5x) ────────────────────────────
-  var logoClickCount = 0;
-  var logoClickTimer = null;
-  var logo = document.getElementById('logo');
+  let logoClickCount = 0;
+  let logoClickTimer = null;
+  const logo = document.getElementById('logo');
 
   if (logo) {
     logo.addEventListener('click', function () {
@@ -1095,9 +1077,9 @@
 
       logoClickTimer = setTimeout(function () {
         logoClickCount = 0;
-      }, 2000);
+      }, LOGO_CLICK_RESET_MS);
 
-      if (logoClickCount >= 5) {
+      if (logoClickCount >= LOGO_CLICK_THRESHOLD) {
         logoClickCount = 0;
         triggerLogoEasterEgg();
       }
@@ -1105,31 +1087,26 @@
   }
 
   function triggerLogoEasterEgg() {
-    // Spin the logo
     logo.classList.add('logo-spin');
     setTimeout(function () {
       logo.classList.remove('logo-spin');
     }, 1000);
 
-    // Invert the page briefly
     document.body.classList.add('invert-flash');
     setTimeout(function () {
       document.body.classList.remove('invert-flash');
     }, 2000);
 
-    // Shake it
     mainSite.classList.add('page-shake');
     setTimeout(function () {
       mainSite.classList.remove('page-shake');
     }, 600);
 
-    // Temporarily change all accent colors
     document.documentElement.style.setProperty('--accent', '#ff005f');
     setTimeout(function () {
       document.documentElement.style.setProperty('--accent', '#00ffc8');
     }, 3000);
 
-    // Terminal message
     if (terminalOutput) {
       appendToTerminal('&nbsp;');
       appendToTerminal(
@@ -1148,8 +1125,8 @@
 
   // ─── GitHub Contributions ────────────────────────────────────
   function initContributions() {
-    var graph = document.getElementById('contribution-graph');
-    var total = document.getElementById('github-total');
+    const graph = document.getElementById('contribution-graph');
+    const total = document.getElementById('github-total');
     if (!graph) return;
 
     fetch('https://github-contributions-api.jogruber.de/v4/leminkozey?y=last')
@@ -1158,25 +1135,24 @@
         return r.json();
       })
       .then(function (data) {
-        var contributions = data.contributions;
+        const contributions = data.contributions;
         if (!contributions || !contributions.length) throw new Error('no data');
 
-        var totalCount = 0;
+        let totalCount = 0;
         Object.values(data.total).forEach(function (v) { totalCount += v; });
         if (total) {
           total.textContent = '';
-          var countSpan = document.createElement('span');
+          const countSpan = document.createElement('span');
           countSpan.textContent = totalCount;
           total.appendChild(countSpan);
           total.appendChild(document.createTextNode(' contributions in the last year'));
         }
 
-        // Pad first week so it starts on the correct weekday (0=Sun)
-        var firstDay = new Date(contributions[0].date).getDay();
-        var weeks = [];
-        var week = [];
+        const firstDay = new Date(contributions[0].date).getDay();
+        const weeks = [];
+        let week = [];
 
-        for (var p = 0; p < firstDay; p++) {
+        for (let p = 0; p < firstDay; p++) {
           week.push(null);
         }
 
@@ -1189,34 +1165,32 @@
         });
         if (week.length) weeks.push(week);
 
-        // Tooltip element (lives outside graph so it won't be clipped)
-        var tooltip = document.createElement('div');
+        const tooltip = document.createElement('div');
         tooltip.className = 'contrib-tooltip';
         document.body.appendChild(tooltip);
 
-        // Hide tooltip when scrolling away
         window.addEventListener('scroll', function () {
           tooltip.classList.remove('visible');
         }, { passive: true });
 
         weeks.forEach(function (w) {
-          var col = document.createElement('div');
+          const col = document.createElement('div');
           col.className = 'contrib-week';
           w.forEach(function (day) {
-            var cell = document.createElement('div');
+            const cell = document.createElement('div');
             cell.className = 'contrib-day';
             if (day) {
               cell.setAttribute('data-level', day.level);
               cell.setAttribute('data-count', day.count);
               cell.setAttribute('data-date', day.date);
-              cell.addEventListener('mouseenter', function (e) {
+              cell.addEventListener('mouseenter', function () {
                 tooltip.textContent = day.count + ' contributions on ' + day.date;
                 tooltip.classList.add('visible');
-                var rect = cell.getBoundingClientRect();
+                const rect = cell.getBoundingClientRect();
                 tooltip.style.top = (rect.top - 8) + 'px';
-                var tooltipWidth = tooltip.offsetWidth;
-                var maxLeft = window.innerWidth - tooltipWidth - 8;
-                var currentLeft = rect.left + rect.width / 2;
+                const tooltipWidth = tooltip.offsetWidth;
+                const maxLeft = window.innerWidth - tooltipWidth - 8;
+                const currentLeft = rect.left + rect.width / 2;
                 tooltip.style.left = Math.min(currentLeft, maxLeft) + 'px';
               });
               cell.addEventListener('mouseleave', function () {
@@ -1230,7 +1204,6 @@
           graph.appendChild(col);
         });
 
-        // Auto-scroll to show most recent contributions
         graph.scrollLeft = graph.scrollWidth;
       })
       .catch(function (err) {
@@ -1238,6 +1211,7 @@
         console.error('Contributions fetch failed:', err);
       });
   }
+
 
   // ─── Visitor Counter ─────────────────────────────────────────
   function initVisitorCount() {
@@ -1247,15 +1221,16 @@
         return r.json();
       })
       .then(function (data) {
-        var el = document.getElementById('visitor-num');
+        const el = document.getElementById('visitor-num');
         if (el && typeof data.count === 'number') el.textContent = data.count;
       })
       .catch(function () {});
   }
 
+
   // ─── Hamburger Menu ──────────────────────────────────────────
-  var hamburger = document.getElementById('hamburger');
-  var mainNav = document.getElementById('main-nav');
+  const hamburger = document.getElementById('hamburger');
+  const mainNav = document.getElementById('main-nav');
 
   if (hamburger && mainNav) {
     hamburger.addEventListener('click', function () {
@@ -1281,11 +1256,12 @@
     });
   }
 
-  // ─── Smooth scroll for nav links ────────────────────────────
-  document.querySelectorAll('nav a[href^="#"]').forEach(function (link) {
+
+  // ─── Smooth Scroll for Nav Links ────────────────────────────
+  document.querySelectorAll('#main-nav a[href^="#"]').forEach(function (link) {
     link.addEventListener('click', function (e) {
       e.preventDefault();
-      var target = document.querySelector(this.getAttribute('href'));
+      const target = document.querySelector(this.getAttribute('href'));
       if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
