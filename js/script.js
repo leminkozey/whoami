@@ -80,11 +80,11 @@
     setTimeout(() => {
       bootScreen.style.visibility = 'hidden';
       initRevealAnimations();
-      animateSkillBars();
       initContributions();
       initVisitorCount();
 
       // Three.js already initialized during boot
+      // animateSkillBars() is triggered by IntersectionObserver when skills section is visible
     }, 600);
   }
 
@@ -189,17 +189,20 @@
     var attractRadius = 1.8;
     var attractStrength = 0.6;
 
+    // Pre-allocated objects to avoid GC pressure in animation loop
+    var _plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+    var _mouseWorld = new THREE.Vector3();
+    var _localMouse = new THREE.Vector3();
+
     function deformMesh(mesh, origPositions) {
       // Project mouse into 3D at z=0 plane
       raycaster.setFromCamera(mouseNDC, camera);
-      var plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-      var mouseWorld = new THREE.Vector3();
-      raycaster.ray.intersectPlane(plane, mouseWorld);
-      if (!mouseWorld) return;
+      var result = raycaster.ray.intersectPlane(_plane, _mouseWorld);
+      if (!result) return;
 
       // Transform mouse position into mesh local space
-      var localMouse = mouseWorld.clone();
-      mesh.worldToLocal(localMouse);
+      _localMouse.copy(_mouseWorld);
+      mesh.worldToLocal(_localMouse);
 
       var posAttr = mesh.geometry.attributes.position;
       var arr = posAttr.array;
@@ -209,9 +212,9 @@
         var oy = origPositions[i * 3 + 1];
         var oz = origPositions[i * 3 + 2];
 
-        var dx = localMouse.x - ox;
-        var dy = localMouse.y - oy;
-        var dz = localMouse.z - oz;
+        var dx = _localMouse.x - ox;
+        var dy = _localMouse.y - oy;
+        var dz = _localMouse.z - oz;
         var dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
         if (dist < attractRadius && dist > 0.01) {
@@ -739,7 +742,6 @@
     }
     if (audioCtx.state === 'suspended') {
       audioCtx.resume();
-      return;
     }
     var t = audioCtx.currentTime;
     var duration = 0.012 + Math.random() * 0.008;
@@ -997,6 +999,9 @@
   var konamiIndex = 0;
 
   document.addEventListener('keydown', function (e) {
+    // Don't trigger konami code when typing in terminal (arrow keys = history navigation)
+    if (e.target === terminalInput) return;
+
     if (e.key === konamiSequence[konamiIndex]) {
       konamiIndex++;
       if (konamiIndex === konamiSequence.length) {
