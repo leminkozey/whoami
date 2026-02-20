@@ -1,15 +1,11 @@
 {
   "name": "Leminkozey",
   "short_name": "Leminkozey",
+  "start_url": "/",
   "icons": [
     {
       "src": "/assets/favicon-48.png",
       "sizes": "48x48",
-      "type": "image/png"
-    },
-    {
-      "src": "/assets/favicon-64.png",
-      "sizes": "64x64",
       "type": "image/png"
     },
     {
