@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
+const crypto = require('crypto');
 
 const PORT = 8081;
 const COUNTER_FILE = path.join(__dirname, 'visitors.json');
@@ -84,22 +85,28 @@ function sanitizeText(str) {
     .trim();
 }
 
-var MAX_GUESTBOOK_ENTRIES = 500;
+const MAX_GUESTBOOK_ENTRIES = 500;
+
+const IP_HASH_SALT = 'whoami-guestbook-2026';
 
 function getClientIP(req) {
   // CF-Connecting-IP is set by Cloudflare and cannot be spoofed by the client
-  var cfIP = req.headers['cf-connecting-ip'];
+  const cfIP = req.headers['cf-connecting-ip'];
   if (cfIP) return cfIP.trim();
   // Fallback for direct connections (development)
   return req.socket.remoteAddress || '';
+}
+
+function hashIP(ip) {
+  return crypto.createHash('sha256').update(IP_HASH_SALT + ip).digest('hex');
 }
 
 // ─── Rate Limiter ─────────────────────────────────────────
 const rateLimitMap = new Map();
 
 function isRateLimited(ip) {
-  var now = Date.now();
-  var entry = rateLimitMap.get(ip);
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
   if (!entry || now > entry.resetTime) {
     rateLimitMap.set(ip, { count: 1, resetTime: now + 60000 });
     return false;
@@ -109,12 +116,13 @@ function isRateLimited(ip) {
 }
 
 // Cleanup expired entries every 5 minutes
-setInterval(function () {
-  var now = Date.now();
-  for (var [ip, entry] of rateLimitMap) {
+const rateLimitCleanup = setInterval(function () {
+  const now = Date.now();
+  for (const [ip, entry] of rateLimitMap) {
     if (now > entry.resetTime) rateLimitMap.delete(ip);
   }
 }, 300000);
+rateLimitCleanup.unref();
 
 function writeCounter(count) {
   const tmp = COUNTER_FILE + '.tmp';
@@ -127,9 +135,9 @@ function writeCounter(count) {
 }
 
 function parseCookies(req) {
-  var cookies = {};
+  const cookies = {};
   (req.headers.cookie || '').split(';').forEach(function (c) {
-    var idx = c.indexOf('=');
+    const idx = c.indexOf('=');
     if (idx > 0) {
       cookies[c.substring(0, idx).trim()] = c.substring(idx + 1).trim();
     }
@@ -140,7 +148,7 @@ function parseCookies(req) {
 const server = http.createServer((req, res) => {
   // Request size limit
   if (req.url.length > 2048) {
-    res.writeHead(414, SECURITY_HEADERS);
+    res.writeHead(414, Object.assign({ 'Content-Type': 'text/plain' }, SECURITY_HEADERS));
     return res.end('URI Too Long');
   }
 
@@ -149,14 +157,14 @@ const server = http.createServer((req, res) => {
   try {
     pathname = decodeURIComponent(parsed.pathname);
   } catch {
-    res.writeHead(400, SECURITY_HEADERS);
+    res.writeHead(400, Object.assign({ 'Content-Type': 'text/plain' }, SECURITY_HEADERS));
     return res.end('Bad Request');
   }
 
   // Visitor counter API
   if (pathname === '/api/visitors') {
-    var cookies = parseCookies(req);
-    var headers = Object.assign({
+    const cookies = parseCookies(req);
+    const headers = Object.assign({
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache',
     }, SECURITY_HEADERS);
@@ -174,15 +182,15 @@ const server = http.createServer((req, res) => {
 
   // ─── Guestbook API ───────────────────────────────────────
   if (pathname === '/api/guestbook') {
-    var ip = getClientIP(req);
-    var apiHeaders = Object.assign({
+    const ip = getClientIP(req);
+    const apiHeaders = Object.assign({
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache',
     }, SECURITY_HEADERS);
 
     if (req.method === 'GET') {
       // Return entries without IP addresses, newest first, max 50
-      var publicEntries = guestbookEntries
+      const publicEntries = guestbookEntries
         .slice()
         .reverse()
         .slice(0, 50)
@@ -192,13 +200,20 @@ const server = http.createServer((req, res) => {
     }
 
     if (req.method === 'POST') {
+      // CSRF: reject cross-origin POST requests
+      const origin = req.headers['origin'];
+      if (origin && origin !== 'https://leminkozey.me') {
+        res.writeHead(403, apiHeaders);
+        return res.end(JSON.stringify({ error: 'Forbidden' }));
+      }
+
       if (isRateLimited(ip)) {
         res.writeHead(429, apiHeaders);
         return res.end(JSON.stringify({ error: 'Too many requests, slow down' }));
       }
 
-      var body = '';
-      var aborted = false;
+      let body = '';
+      let aborted = false;
       req.on('data', function (chunk) {
         body += chunk;
         if (body.length > 1024) {
@@ -211,7 +226,7 @@ const server = http.createServer((req, res) => {
       req.on('end', function () {
         if (aborted) return;
 
-        var data;
+        let data;
         try {
           data = JSON.parse(body);
         } catch {
@@ -219,24 +234,30 @@ const server = http.createServer((req, res) => {
           return res.end(JSON.stringify({ error: 'Invalid JSON' }));
         }
 
-        // Validate message
-        var message = typeof data.message === 'string' ? sanitizeText(data.message) : '';
-        if (!message || message.length < 1) {
+        // Validate message (length check on raw string BEFORE sanitizing)
+        const rawMessage = typeof data.message === 'string' ? data.message.trim() : '';
+        if (!rawMessage || rawMessage.length < 1) {
           res.writeHead(400, apiHeaders);
           return res.end(JSON.stringify({ error: 'Message is required' }));
         }
-        if (message.length > 100) {
+        if (rawMessage.length > 100) {
           res.writeHead(400, apiHeaders);
           return res.end(JSON.stringify({ error: 'Message too long (max 100 chars)' }));
         }
+        const message = sanitizeText(rawMessage);
 
-        // Validate name
-        var name = typeof data.name === 'string' ? sanitizeText(data.name) : '';
-        if (!name) name = 'Anonymous';
-        if (name.length > 20) name = name.substring(0, 20);
+        // Validate name (length check on raw string BEFORE sanitizing)
+        let rawName = typeof data.name === 'string' ? data.name.trim() : '';
+        if (!rawName) rawName = 'Anonymous';
+        if (rawName.length > 20) rawName = rawName.substring(0, 20);
+        const name = sanitizeText(rawName);
 
-        // IP duplicate check
-        var alreadySigned = guestbookEntries.some(function (e) { return e.ip === ip; });
+        // IP duplicate check (using hash for GDPR compliance)
+        const ipHash = hashIP(ip);
+        const alreadySigned = guestbookEntries.some(function (e) {
+          // Support both legacy plaintext IPs and new hashed IPs
+          return e.ipHash === ipHash || e.ip === ip;
+        });
         if (alreadySigned) {
           res.writeHead(409, apiHeaders);
           return res.end(JSON.stringify({ error: 'You already signed the guestbook!' }));
@@ -248,11 +269,11 @@ const server = http.createServer((req, res) => {
           return res.end(JSON.stringify({ error: 'Guestbook is full' }));
         }
 
-        var entry = {
+        const entry = {
           name: name,
           message: message,
           date: new Date().toISOString().split('T')[0],
-          ip: ip,
+          ipHash: ipHash,
         };
         guestbookEntries.push(entry);
         writeGuestbook(guestbookEntries);
@@ -279,14 +300,14 @@ const server = http.createServer((req, res) => {
   const isAllowed = ALLOWED_FILES.includes(pathname) ||
                     ALLOWED_DIRS.some(function (dir) { return pathname.startsWith(dir); });
   if (!isAllowed) {
-    res.writeHead(404, SECURITY_HEADERS);
+    res.writeHead(404, Object.assign({ 'Content-Type': 'text/plain' }, SECURITY_HEADERS));
     return res.end('Not Found');
   }
 
   // Path traversal protection
   const filePath = path.resolve(path.join(__dirname, pathname));
   if (!filePath.startsWith(PROJECT_ROOT)) {
-    res.writeHead(403, SECURITY_HEADERS);
+    res.writeHead(403, Object.assign({ 'Content-Type': 'text/plain' }, SECURITY_HEADERS));
     return res.end('Forbidden');
   }
 
@@ -301,20 +322,20 @@ const server = http.createServer((req, res) => {
     const contentType = MIME[ext] || 'application/octet-stream';
 
     // Smart caching: long cache for assets (images, fonts), short for code/html
-    var cacheControl = 'no-cache';
+    let cacheControl = 'no-cache';
     if (pathname.startsWith('/assets/')) {
       cacheControl = 'public, max-age=2592000, immutable'; // 30 days
     } else if (ext === '.css' || ext === '.js') {
       cacheControl = 'public, max-age=3600'; // 1 hour
     }
 
-    var headers = Object.assign({
+    const headers = Object.assign({
       'Content-Type': contentType,
       'Cache-Control': cacheControl,
     }, SECURITY_HEADERS);
 
     // Gzip compression for static files only (not API — avoids BREACH-style timing)
-    var acceptEncoding = req.headers['accept-encoding'] || '';
+    const acceptEncoding = req.headers['accept-encoding'] || '';
     if (COMPRESSIBLE.has(contentType) && acceptEncoding.includes('gzip')) {
       zlib.gzip(data, function (err, compressed) {
         if (err) {
@@ -339,4 +360,8 @@ server.keepAliveTimeout = 15000;
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`Serving on http://127.0.0.1:${PORT}`);
 });
+
+// Graceful shutdown
+process.on('SIGTERM', () => { server.close(() => process.exit(0)); });
+process.on('SIGINT', () => { server.close(() => process.exit(0)); });
 
