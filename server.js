@@ -10,7 +10,7 @@ const PROJECT_ROOT = path.resolve(__dirname) + path.sep;
 
 // Allowed directories and files for static serving
 const ALLOWED_DIRS = ['/js/', '/css/', '/assets/'];
-const ALLOWED_FILES = ['/index.html', '/robots.txt', '/sitemap.xml', '/favicon.ico'];
+const ALLOWED_FILES = ['/index.html', '/robots.txt', '/sitemap.xml', '/favicon.ico', '/site.webmanifest'];
 
 const MIME = {
   '.html': 'text/html',
@@ -28,6 +28,7 @@ const MIME = {
   '.woff2': 'font/woff2',
   '.xml': 'application/xml',
   '.txt': 'text/plain',
+  '.webmanifest': 'application/manifest+json',
 };
 
 const SECURITY_HEADERS = {
