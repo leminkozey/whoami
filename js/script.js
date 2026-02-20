@@ -27,6 +27,7 @@
   const bootLog = document.getElementById('boot-log');
   const mainSite = document.getElementById('main-site');
 
+  document.body.style.overflow = 'hidden';
   function runBoot() {
     let i = 0;
     let skipped = false;
@@ -65,6 +66,7 @@
   function finishBoot() {
     bootScreen.classList.add('fade-out');
     mainSite.classList.remove('hidden');
+    document.body.style.overflow = '';
 
     // Random hero tagline
     var taglines = [
@@ -76,7 +78,7 @@
     if (taglineEl) taglineEl.textContent = taglines[Math.floor(Math.random() * taglines.length)];
 
     setTimeout(() => {
-      bootScreen.style.display = 'none';
+      bootScreen.style.visibility = 'hidden';
       initRevealAnimations();
       animateSkillBars();
       initContributions();
