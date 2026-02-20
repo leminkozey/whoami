@@ -105,7 +105,7 @@
         <a href="#contact">contact</a>
         <a href="#terminal">terminal</a>
         <span id="visitor-count" class="visitor-count">
-          <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           <span id="visitor-num"></span>
         </span>
       </nav>
@@ -134,8 +134,7 @@
       </div>
       <div class="section-content">
         <div class="about-card">
-          <pre class="about-json">
-{
+          <pre class="about-json"><code>{
   "name": "Manu",
   "alias": "Leminkozey",
   "age": 17,
@@ -148,7 +147,7 @@
   ],
   "currently": "building tools for my local network",
   "fun_fact": "I run a full network dashboard on a Raspberry Pi"
-}</pre>
+}</code></pre>
         </div>
         <div class="about-text">
           <p>17-year-old IT trainee from Germany, specializing in application development. I build self-hosted tools for my homelab and local network &mdash; from Kanban boards to network dashboards to offline Wikipedia archives. I like shipping real projects, learning by doing, and making things that are actually useful. When I'm not coding, I'm probably tinkering with my Raspberry Pi or figuring out how to dockerize everything.</p>
@@ -367,8 +366,8 @@
         <div class="section-line"></div>
       </div>
       <button id="sound-toggle" class="sound-toggle" title="Toggle typing sound" aria-label="Toggle typing sound">
-        <svg class="sound-icon sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-        <svg class="sound-icon sound-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+        <svg class="sound-icon sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        <svg class="sound-icon sound-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
       </button>
       <div class="terminal-window">
         <div class="terminal-bar">
