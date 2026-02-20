@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <text x="32" y="32" text-anchor="middle" dominant-baseline="central" font-family="'JetBrains Mono', 'SF Mono', 'Fira Code', monospace" font-weight="900">
+    <tspan fill="#00ffc8" font-size="28.6px" letter-spacing="-0.05em">{</tspan><tspan fill="#ffffff" font-size="22px" letter-spacing="-0.08em">LK</tspan><tspan fill="#00ffc8" font-size="28.6px" letter-spacing="-0.05em">}</tspan>
+  </text>
+</svg>
