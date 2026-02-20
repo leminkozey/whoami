@@ -416,14 +416,14 @@ nav a:hover::after {
 
 .glitch:hover::before {
   opacity: 0.8;
-  color: #ff005f;
+  color: var(--accent);
   animation: glitch-1 0.3s linear infinite;
   clip-path: inset(20% 0 40% 0);
 }
 
 .glitch:hover::after {
   opacity: 0.8;
-  color: #00e5ff;
+  color: #ffffff;
   animation: glitch-2 0.3s linear infinite;
   clip-path: inset(60% 0 10% 0);
 }
