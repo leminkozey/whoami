@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-  <text x="16" y="16" text-anchor="middle" dominant-baseline="central" font-family="'JetBrains Mono', 'SF Mono', 'Fira Code', monospace" font-weight="900">
-    <tspan fill="#00ffc8" font-size="14.3px" letter-spacing="-0.05em">{</tspan><tspan fill="#ffffff" font-size="11px" letter-spacing="-0.08em">LK</tspan><tspan fill="#00ffc8" font-size="14.3px" letter-spacing="-0.05em">}</tspan>
+  <rect width="32" height="32" rx="6" fill="#0a0a0a"/>
+  <text x="16" y="17" text-anchor="middle" dominant-baseline="central" font-family="'JetBrains Mono', 'SF Mono', 'Fira Code', monospace" font-weight="900">
+    <tspan fill="#00ffc8" font-size="18px">{</tspan><tspan fill="#ffffff" font-size="13px" letter-spacing="-0.08em">LK</tspan><tspan fill="#00ffc8" font-size="18px">}</tspan>
   </text>
 </svg>
