@@ -82,21 +82,14 @@
       initContributions();
       initVisitorCount();
 
-      // Init Three.js immediately if preloaded, otherwise wait for it
-      bootDone = true;
-      if (threeReady) initThreeJS();
+      // Three.js already initialized during boot
     }, 600);
   }
 
-  // Preload Three.js during boot so the globe is ready when boot finishes
-  var threeReady = false;
-  var bootDone = false;
+  // Load Three.js immediately so the globe renders during boot
   var threeScript = document.createElement('script');
   threeScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-  threeScript.onload = function () {
-    threeReady = true;
-    if (bootDone) initThreeJS();
-  };
+  threeScript.onload = function () { initThreeJS(); };
   document.head.appendChild(threeScript);
 
   // Start boot on load
@@ -112,10 +105,6 @@
     const container = document.getElementById('three-container');
     if (!container || typeof THREE === 'undefined') return;
     if (container.querySelector('canvas')) return;
-
-    // Remove loader spinner
-    var loader = document.getElementById('three-loader');
-    if (loader) loader.remove();
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
