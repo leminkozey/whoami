@@ -82,13 +82,22 @@
       initContributions();
       initVisitorCount();
 
-      // Lazy load Three.js after boot
-      var threeScript = document.createElement('script');
-      threeScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-      threeScript.onload = function () { initThreeJS(); };
-      document.head.appendChild(threeScript);
+      // Init Three.js immediately if preloaded, otherwise wait for it
+      bootDone = true;
+      if (threeReady) initThreeJS();
     }, 600);
   }
+
+  // Preload Three.js during boot so the globe is ready when boot finishes
+  var threeReady = false;
+  var bootDone = false;
+  var threeScript = document.createElement('script');
+  threeScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+  threeScript.onload = function () {
+    threeReady = true;
+    if (bootDone) initThreeJS();
+  };
+  document.head.appendChild(threeScript);
 
   // Start boot on load
   if (document.readyState === 'loading') {
@@ -150,7 +159,7 @@
     var origPos2 = new Float32Array(geo2.attributes.position.array);
 
     // Particles
-    const particleCount = 200;
+    const particleCount = 500;
     const positions = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount; i++) {
       positions[i * 3] = (Math.random() - 0.5) * 8;
