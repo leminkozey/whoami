@@ -67,10 +67,10 @@ let guestbookEntries = (function () {
 
 function writeGuestbook(entries) {
   const tmp = GUESTBOOK_FILE + '.tmp';
-  fs.writeFile(tmp, JSON.stringify({ entries }), (err) => {
-    if (err) return console.error('Guestbook write failed:', err);
-    fs.rename(tmp, GUESTBOOK_FILE, (err) => {
-      if (err) console.error('Guestbook rename failed:', err);
+  fs.writeFile(tmp, JSON.stringify({ entries }), (writeErr) => {
+    if (writeErr) return console.error('Guestbook write failed:', writeErr);
+    fs.rename(tmp, GUESTBOOK_FILE, (renameErr) => {
+      if (renameErr) console.error('Guestbook rename failed:', renameErr);
     });
   });
 }
@@ -126,10 +126,10 @@ rateLimitCleanup.unref();
 
 function writeCounter(count) {
   const tmp = COUNTER_FILE + '.tmp';
-  fs.writeFile(tmp, JSON.stringify({ count }), (err) => {
-    if (err) return console.error('Counter write failed:', err);
-    fs.rename(tmp, COUNTER_FILE, (err) => {
-      if (err) console.error('Counter rename failed:', err);
+  fs.writeFile(tmp, JSON.stringify({ count }), (writeErr) => {
+    if (writeErr) return console.error('Counter write failed:', writeErr);
+    fs.rename(tmp, COUNTER_FILE, (renameErr) => {
+      if (renameErr) console.error('Counter rename failed:', renameErr);
     });
   });
 }
@@ -337,8 +337,8 @@ const server = http.createServer((req, res) => {
     // Gzip compression for static files only (not API — avoids BREACH-style timing)
     const acceptEncoding = req.headers['accept-encoding'] || '';
     if (COMPRESSIBLE.has(contentType) && acceptEncoding.includes('gzip')) {
-      zlib.gzip(data, function (err, compressed) {
-        if (err) {
+      zlib.gzip(data, function (gzipErr, compressed) {
+        if (gzipErr) {
           res.writeHead(200, headers);
           return res.end(data);
         }
