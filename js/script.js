@@ -133,6 +133,9 @@
     const mesh1 = new THREE.Mesh(geo1, mat1);
     scene.add(mesh1);
 
+    // Store original vertex positions for attraction effect
+    var origPos1 = new Float32Array(geo1.attributes.position.array);
+
     // Inner sphere
     const geo2 = new THREE.IcosahedronGeometry(0.9, 2);
     const mat2 = new THREE.MeshBasicMaterial({
@@ -143,6 +146,8 @@
     });
     const mesh2 = new THREE.Mesh(geo2, mat2);
     scene.add(mesh2);
+
+    var origPos2 = new Float32Array(geo2.attributes.position.array);
 
     // Particles
     const particleCount = 200;
@@ -163,13 +168,66 @@
     const particles = new THREE.Points(particleGeo, particleMat);
     scene.add(particles);
 
-    // Mouse parallax
+    // Mouse tracking
     let mouseX = 0;
     let mouseY = 0;
+    var mouse3D = new THREE.Vector3(0, 0, 0);
+    var raycaster = new THREE.Raycaster();
+    var mouseNDC = new THREE.Vector2(0, 0);
+
     document.addEventListener('mousemove', function (e) {
       mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
       mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+
+      // Convert mouse to NDC for raycasting
+      var rect = container.getBoundingClientRect();
+      mouseNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     });
+
+    // Attraction settings
+    var attractRadius = 1.8;
+    var attractStrength = 0.6;
+
+    function deformMesh(mesh, origPositions) {
+      // Project mouse into 3D at z=0 plane
+      raycaster.setFromCamera(mouseNDC, camera);
+      var plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+      var mouseWorld = new THREE.Vector3();
+      raycaster.ray.intersectPlane(plane, mouseWorld);
+      if (!mouseWorld) return;
+
+      // Transform mouse position into mesh local space
+      var localMouse = mouseWorld.clone();
+      mesh.worldToLocal(localMouse);
+
+      var posAttr = mesh.geometry.attributes.position;
+      var arr = posAttr.array;
+
+      for (var i = 0; i < posAttr.count; i++) {
+        var ox = origPositions[i * 3];
+        var oy = origPositions[i * 3 + 1];
+        var oz = origPositions[i * 3 + 2];
+
+        var dx = localMouse.x - ox;
+        var dy = localMouse.y - oy;
+        var dz = localMouse.z - oz;
+        var dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        if (dist < attractRadius && dist > 0.01) {
+          var force = (1 - dist / attractRadius) * attractStrength;
+          arr[i * 3] = ox + dx * force;
+          arr[i * 3 + 1] = oy + dy * force;
+          arr[i * 3 + 2] = oz + dz * force;
+        } else {
+          // Smooth snap-back
+          arr[i * 3] += (ox - arr[i * 3]) * 0.1;
+          arr[i * 3 + 1] += (oy - arr[i * 3 + 1]) * 0.1;
+          arr[i * 3 + 2] += (oz - arr[i * 3 + 2]) * 0.1;
+        }
+      }
+      posAttr.needsUpdate = true;
+    }
 
     // Animation loop (pauses when tab is hidden)
     var animating = true;
@@ -186,6 +244,10 @@
       mesh2.rotation.z = time * 0.05;
 
       particles.rotation.y = time * 0.02;
+
+      // Vertex attraction toward mouse
+      deformMesh(mesh1, origPos1);
+      deformMesh(mesh2, origPos2);
 
       // Subtle parallax
       camera.position.x += (mouseX * 0.3 - camera.position.x) * 0.02;
@@ -1211,20 +1273,6 @@
         mainNav.classList.remove('open');
         hamburger.setAttribute('aria-expanded', 'false');
       }
-    });
-  }
-
-  // ─── Glitch Mouse Tracking ─────────────────────────────────
-  var glitchEl = document.querySelector('.glitch');
-  if (glitchEl) {
-    document.addEventListener('mousemove', function (e) {
-      var rect = glitchEl.getBoundingClientRect();
-      var cx = rect.left + rect.width / 2;
-      var cy = rect.top + rect.height / 2;
-      var dx = (e.clientX - cx) / window.innerWidth;
-      var dy = (e.clientY - cy) / window.innerHeight;
-      glitchEl.style.setProperty('--gx', (dx * 12) + 'px');
-      glitchEl.style.setProperty('--gy', (dy * 8) + 'px');
     });
   }
 
