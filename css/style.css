@@ -932,8 +932,8 @@ header {
   align-self: center;
   font-family: var(--font);
   font-size: 13px;
-  height: var(--space-5);
-  line-height: var(--space-5);
+  height: 20px;
+  line-height: 20px;
   padding: 0;
   margin: 0;
   border: none;
@@ -945,6 +945,7 @@ header {
   color: var(--text-ghost);
   pointer-events: none;
   display: block;
+  transform: translateY(1px);
 }
 
 #terminal-input {

@@ -774,13 +774,17 @@
   function updateGhost() {
     const input = terminalInput.value.toLowerCase();
     currentSuggestion = '';
-    if (ghostEl) ghostEl.textContent = '';
+    if (ghostEl) ghostEl.innerHTML = '';
     if (input.length < 2) return;
     const allCmds = Object.keys(commands);
     for (let i = 0; i < allCmds.length; i++) {
       if (allCmds[i].indexOf(input) === 0 && allCmds[i] !== input) {
         currentSuggestion = allCmds[i];
-        if (ghostEl) ghostEl.textContent = currentSuggestion;
+        if (ghostEl) {
+          const typed = currentSuggestion.substring(0, input.length);
+          const rest = currentSuggestion.substring(input.length);
+          ghostEl.innerHTML = '<span style="visibility:hidden">' + typed + '</span>' + rest;
+        }
         return;
       }
     }
