@@ -1160,7 +1160,14 @@
           week.push(null);
         }
 
+        const LEVEL_CAP = 40;
         contributions.forEach(function (day) {
+          var c = day.count;
+          if (c === 0) day.level = 0;
+          else if (c <= LEVEL_CAP * 0.25) day.level = 1;
+          else if (c <= LEVEL_CAP * 0.5) day.level = 2;
+          else if (c <= LEVEL_CAP * 0.75) day.level = 3;
+          else day.level = 4;
           week.push(day);
           if (week.length === 7) {
             weeks.push(week);
